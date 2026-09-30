@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget_card"
+    android:orientation="vertical"
+    android:paddingStart="12dp"
+    android:paddingTop="9dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="9dp">
+
+    <!-- Header Row: Diya App Icon, Store Name, Privacy Toggle, Refresh Button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/iv_widget_logo"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:contentDescription="Store Diya Icon"
+            android:src="@drawable/ic_widget_diya" />
+
+        <TextView
+            android:id="@+id/tv_widget_store_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:paddingStart="7dp"
+            android:paddingEnd="6dp"
+            android:text="Amar Dukan"
+            android:textColor="#FFFDF7"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <!-- Privacy Mask Toggle Icon Button -->
+        <ImageView
+            android:id="@+id/btn_widget_privacy"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_widget_refresh_btn"
+            android:contentDescription="Toggle Privacy Mask"
+            android:padding="5dp"
+            android:src="@drawable/ic_widget_eye" />
+
+        <!-- Refresh Button -->
+        <ImageView
+            android:id="@+id/btn_widget_refresh"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:background="@drawable/bg_widget_refresh_btn"
+            android:contentDescription="Refresh Widget"
+            android:padding="5dp"
+            android:src="@drawable/ic_widget_refresh" />
+    </LinearLayout>
+
+    <!-- TODAY'S SALES Label (Gold, Bold) & Last Updated Time Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tv_widget_sales_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_today_sales_label"
+            android:textColor="#FBBF24"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/tv_widget_updated_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:text="Updated: --:--"
+            android:textColor="#D1C4C4"
+            android:textSize="9sp" />
+    </LinearLayout>
+
+    <!-- Sales Amount & Yesterday Comparison Indicator Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tv_widget_sales_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:text="₹0.00"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <!-- Comparison vs Yesterday at same time (Green ▲ / Red ▼ / Neutral •) -->
+        <TextView
+            android:id="@+id/tv_widget_sales_comparison"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_widget_comp_up"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:paddingStart="6dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="6dp"
+            android:paddingBottom="2dp"
+            android:text="▲ +₹0"
+            android:textColor="#4ADE80"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Sub-Metrics Row 1: Bills Count & Cash/UPI Split Pill -->
+    <LinearLayout
+        android:id="@+id/layout_widget_pills_row1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tv_widget_bills_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_widget_pill"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:paddingStart="7dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="7dp"
+            android:paddingBottom="2dp"
+            android:text="0 Bills"
+            android:textColor="#3B070B"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_widget_payment_split"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_widget_pill_split"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:paddingStart="7dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="7dp"
+            android:paddingBottom="2dp"
+            android:text="💵 ₹0 | 📱 ₹0"
+            android:textColor="#FFFBEB"
+            android:textSize="10sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Sub-Metrics Row 2: Business Health (Profit & Low Stock Alert) -->
+    <LinearLayout
+        android:id="@+id/layout_widget_pills_row2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <!-- Profit Container (Restricted & Hidden by Default, toggled in Settings) -->
+        <LinearLayout
+            android:id="@+id/layout_widget_profit_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_widget_profit_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_widget_pill_profit"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:paddingStart="7dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="7dp"
+                android:paddingBottom="2dp"
+                android:text="Profit: ₹0.00"
+                android:textColor="#DCFCE7"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Low Stock Alert Pill -->
+        <TextView
+            android:id="@+id/tv_widget_low_stock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_widget_pill_alert"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:paddingStart="7dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="7dp"
+            android:paddingBottom="2dp"
+            android:text="⚠️ 0 Low Stock"
+            android:textColor="#FEE2E2"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- Daily Sales Goal Progress Bar Section -->
+    <LinearLayout
+        android:id="@+id/layout_widget_goal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tv_widget_goal_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🎯 Goal: ₹0 / ₹5,000 (0%)"
+                android:textColor="#FDE68A"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/pb_widget_goal"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_marginTop="3dp"
+            android:max="100"
+            android:progress="0"
+            android:indeterminate="false"
+            android:indeterminateOnly="false"
+            android:progressDrawable="@drawable/progress_widget_goal" />
+    </LinearLayout>
+
+    <!-- Quick Action Buttons Bar -->
+    <LinearLayout
+        android:id="@+id/layout_widget_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- 1. POS Bill (+ Sale) Primary Action Button -->
+        <LinearLayout
+            android:id="@+id/btn_widget_action_pos"
+            android:layout_width="0dp"
+            android:layout_height="26dp"
+            android:layout_marginEnd="3dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_widget_action_btn_pos"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:contentDescription="New Sale"
+                android:src="@drawable/ic_shortcut_sale" />
+
+            <TextView
+                android:id="@+id/tv_widget_action_pos_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:text="+ Sale"
+                android:textColor="#3B070B"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- 2. Khata Due Action Button -->
+        <LinearLayout
+            android:id="@+id/btn_widget_action_khata"
+            android:layout_width="0dp"
+            android:layout_height="26dp"
+            android:layout_marginStart="3dp"
+            android:layout_marginEnd="3dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_widget_action_btn"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:contentDescription="Khata Due"
+                android:src="@drawable/ic_widget_khata" />
+
+            <TextView
+                android:id="@+id/tv_widget_action_khata_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:text="Khata"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- 3. Stock / Inventory Action Button -->
+        <LinearLayout
+            android:id="@+id/btn_widget_action_stock"
+            android:layout_width="0dp"
+            android:layout_height="26dp"
+            android:layout_marginStart="3dp"
+            android:layout_marginEnd="3dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_widget_action_btn"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:contentDescription="Stock Inventory"
+                android:src="@drawable/ic_widget_stock" />
+
+            <TextView
+                android:id="@+id/tv_widget_action_stock_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:text="Stock"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- 4. P&L Reports Action Button -->
+        <LinearLayout
+            android:id="@+id/btn_widget_action_reports"
+            android:layout_width="0dp"
+            android:layout_height="26dp"
+            android:layout_marginStart="3dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_widget_action_btn"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:contentDescription="P and L Reports"
+                android:src="@drawable/ic_widget_pnl" />
+
+            <TextView
+                android:id="@+id/tv_widget_action_reports_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:text="P&amp;L"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

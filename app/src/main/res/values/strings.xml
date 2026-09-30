@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Amar Dukan</string>
+    <string name="default_web_client_id">645499359222-t6kmdj2nmpu6u0tvp80gccp538bf8if0.apps.googleusercontent.com</string>
+
+    <!-- App Shortcuts -->
+    <string name="shortcut_new_sale_short">New Sale</string>
+    <string name="shortcut_new_sale_long">Start New POS Billing</string>
+    <string name="shortcut_add_expense_short">Add Expense</string>
+    <string name="shortcut_add_expense_long">Record Store Expense</string>
+    <string name="shortcut_add_product_short">Add Product</string>
+    <string name="shortcut_add_product_long">Add New Stock Product</string>
+    <string name="shortcut_todays_report_short">Today\'s Report</string>
+    <string name="shortcut_todays_report_long">Daily Sales &amp; Profit Summary</string>
+
+    <!-- Widget Strings -->
+    <string name="widget_today_sales_title">Amar Dukan - Today\'s Sales</string>
+    <string name="widget_today_sales_label">TODAY\'S SALES</string>
+    <string name="widget_no_sales">₹0.00</string>
+    <string name="widget_zero_bills">0 Bills</string>
+    <string name="widget_last_updated">Updated just now</string>
+</resources>

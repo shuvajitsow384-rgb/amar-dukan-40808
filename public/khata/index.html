@@ -1,0 +1,2883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<div id="debug-overlay" style="position:fixed; bottom:0; left:0; right:0; max-height:160px; overflow-y:auto; background:rgba(0,0,0,0.9); color:#00ff00; font-family:monospace; font-size:11px; padding:10px; z-index:999999; border-top:2px solid #ef4444; pointer-events:auto; text-align:left;">
+  <div style="font-weight:bold; color:#ff4444; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+    <span>[DEBUG CONSOLE]</span>
+    <button onclick="document.getElementById('debug-overlay').style.display='none'" style="background:#ff4444; color:white; border:none; padding:2px 8px; border-radius:4px; font-size:10px; cursor:pointer; font-weight:bold;">Hide Logs</button>
+  </div>
+  <div id="debug-log-lines">Console logs will appear here...</div>
+</div>
+<script>
+  (function() {
+    const container = document.getElementById('debug-log-lines');
+    function logToScreen(msg, isError = false) {
+      const line = document.createElement('div');
+      line.style.color = isError ? '#ff3333' : '#00ff00';
+      line.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
+      line.style.padding = '2px 0';
+      line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+      container.appendChild(line);
+      const overlay = document.getElementById('debug-overlay');
+      overlay.scrollTop = overlay.scrollHeight;
+    }
+    window.onerror = function(message, source, lineno, colno, error) {
+      logToScreen('ERROR: ' + message + ' (' + source + ':' + lineno + ')', true);
+    };
+    window.onunhandledrejection = function(event) {
+      logToScreen('REJECTION: ' + (event.reason ? (event.reason.message || String(event.reason)) : 'unknown rejection'), true);
+    };
+    const origLog = console.log;
+    const origError = console.error;
+    const origWarn = console.warn;
+    console.log = function(...args) {
+      origLog.apply(console, args);
+      logToScreen(args.join(' '));
+    };
+    console.error = function(...args) {
+      origError.apply(console, args);
+      logToScreen('ERR: ' + args.join(' '), true);
+    };
+    console.warn = function(...args) {
+      origWarn.apply(console, args);
+      logToScreen('WARN: ' + args.join(' '), true);
+    };
+    console.log('Debug overlay initialized successfully!');
+  })();
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Customer Digital Khata | Amar Dukan</title>
+<!-- Google Fonts: Noto Sans + Noto Sans Bengali -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Lightweight QR Code library for dynamic QR rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<!-- Auto-init when on Firebase Hosting -->
+<!-- <script src="/__/firebase/init.js" onerror="console.log('Using standard Firebase config')"></script> -->
+<style>
+  :root {
+    --primary: #8B1E3F;          /* Deep Maroon / Red */
+    --primary-light: #FCE7EC;
+    --primary-dark: #670E28;
+    --secondary: #C9971C;        /* Warm Gold / Amber */
+    --secondary-light: #FEF3C7;
+    --green-profit: #2E7D32;     /* Deep Green */
+    --green-bg: #E8F5E9;
+    --red-due: #D32F2F;          /* M3 Red-Orange Alert */
+    --red-bg: #FFEBEE;
+    --amber-bg: #FEF3C7;
+    --amber-text: #92400E;
+    --card-bg: #FFFFFF;
+    --bg-main: #FAF9F7;          /* High-contrast warm neutral */
+    --text-primary: #2B2A28;
+    --text-secondary: #6B6963;
+    --border-color: #E5E2DC;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 12px -2px rgba(139, 30, 63, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 12px 28px -4px rgba(139, 30, 63, 0.14), 0 4px 10px -2px rgba(0, 0, 0, 0.05);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: 'Noto Sans', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    line-height: 1.5;
+    padding-bottom: 40px;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 540px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  /* Header */
+  .store-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 24px 20px 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 3px solid var(--secondary);
+  }
+
+  .store-header::after {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 120px;
+    height: 120px;
+    background: rgba(201, 151, 28, 0.12);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .store-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(201, 151, 28, 0.3);
+    border: 1px solid rgba(201, 151, 28, 0.5);
+    color: #FFFDF5;
+    backdrop-filter: blur(8px);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .store-name {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+
+  .store-address {
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 14px;
+  }
+
+  .customer-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.14);
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .customer-name {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .customer-phone {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  /* Balance Card */
+  .balance-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 22px 20px 20px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+  }
+
+  .balance-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  .balance-amount {
+    font-size: 38px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+    line-height: 1.15;
+  }
+
+  .balance-amount.due {
+    color: var(--primary);
+  }
+
+  .balance-amount.advance {
+    color: var(--green-profit);
+  }
+
+  .balance-amount.settled {
+    color: var(--text-secondary);
+  }
+
+  .balance-status-tag {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .tag-due {
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid rgba(139, 30, 63, 0.2);
+  }
+
+  .tag-advance {
+    background: var(--green-bg);
+    color: var(--green-profit);
+    border: 1px solid rgba(46, 125, 50, 0.2);
+  }
+
+  .tag-settled {
+    background: #F1F5F9;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+
+  /* Embedded Payment Toolkit Card (Direct on Khata page) */
+  .payment-toolkit-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 16px;
+    border: 1.5px solid var(--border-color);
+    text-align: center;
+  }
+
+  .toolkit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .toolkit-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toolkit-sub {
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--secondary-light);
+    color: #92400E;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid #FDE68A;
+  }
+
+  .qr-box {
+    display: inline-block;
+    background: #FFFFFF;
+    padding: 12px;
+    border-radius: 12px;
+    border: 2px solid var(--border-color);
+    margin: 4px auto 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+
+  .qr-box img, .qr-box canvas {
+    display: block;
+    margin: 0 auto;
+  }
+
+  .qr-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0 0 14px 0;
+    line-height: 1.4;
+  }
+
+  .btn-download-qr {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 16px;
+    background: #FFFFFF;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    border-radius: var(--radius-md);
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 12px;
+  }
+
+  .btn-download-qr:hover, .btn-download-qr:active {
+    background: var(--primary-light);
+  }
+
+  .upi-copy-row {
+    background: #FAF9F7;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 14px;
+    text-align: left;
+  }
+
+  .upi-copy-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+
+  .upi-copy-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .upi-copy-text {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .copy-upi-btn {
+    border: 1px solid var(--secondary);
+    background: #FFFDF5;
+    color: #8C660D;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .copy-upi-btn.copied {
+    background: var(--green-profit);
+    color: #FFFFFF;
+    border-color: var(--green-profit);
+  }
+
+  .claim-prompt-box {
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border-color);
+  }
+
+  .btn-ive-paid {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 18px;
+    background: var(--green-profit);
+    color: #FFFFFF;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14.5px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(46, 125, 50, 0.25);
+    transition: all 0.2s ease;
+  }
+
+  .btn-ive-paid:active {
+    transform: scale(0.98);
+    opacity: 0.95;
+  }
+
+  .claim-prompt-hint {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  /* Actions */
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px 18px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s ease, background-color 0.2s ease;
+  }
+
+  .btn:active {
+    transform: scale(0.98);
+  }
+
+  /* Claim Status Banner */
+  .claim-banner {
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    border-left: 4px solid;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .claim-banner.pending {
+    background: var(--amber-bg);
+    border-color: #D97706;
+    color: var(--amber-text);
+  }
+
+  .claim-banner.confirmed {
+    background: var(--green-bg);
+    border-color: var(--green-profit);
+    color: #14532D;
+  }
+
+  .claim-banner.rejected {
+    background: var(--red-bg);
+    border-color: var(--red-due);
+    color: #7F1D1D;
+  }
+
+  .claim-icon {
+    font-size: 20px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .claim-title {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+
+  .claim-desc {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  /* Claim Modal Form */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 420px;
+    padding: 24px;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(20px);
+    transition: transform 0.2s ease;
+  }
+
+  .modal-overlay.active .modal-card {
+    transform: translateY(0);
+  }
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .modal-subtitle {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+    text-align: left;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border-color);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus {
+    border-color: var(--accent);
+  }
+
+  .quick-amounts {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .quick-chip {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    padding: 5px 10px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .btn-cancel {
+    background: #F1F5F9;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+
+  .btn-submit {
+    background: var(--primary);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 10px rgba(139, 30, 63, 0.25);
+  }
+
+  .btn-submit:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  /* 5-Step Visual Pipeline Stepper in Claim Modal */
+  .stage-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FFFDF9;
+    border: 1px solid #F0E6D2;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+
+  .stage-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #E5E2DC;
+    border: 2px solid #FFFFFF;
+    box-shadow: 0 0 0 1px #CBC7BF;
+    transition: all 0.3s ease;
+  }
+
+  .step-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .step-connector {
+    flex: 1;
+    height: 2px;
+    background: #E5E2DC;
+    margin: -14px 4px 0;
+    transition: background 0.3s ease;
+  }
+
+  .stage-step.step-active .step-dot {
+    background: var(--secondary);
+    box-shadow: 0 0 0 3px rgba(201, 151, 28, 0.35);
+    transform: scale(1.2);
+    animation: pulseStep 1s infinite alternate;
+  }
+
+  .stage-step.step-active .step-label {
+    color: #92400E;
+    font-weight: 800;
+  }
+
+  .stage-step.step-done .step-dot {
+    background: var(--green-profit);
+    box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.25);
+  }
+
+  .stage-step.step-done .step-label {
+    color: var(--green-profit);
+  }
+
+  .step-connector.connector-done {
+    background: var(--green-profit);
+  }
+
+  @keyframes pulseStep {
+    0% { transform: scale(1.1); box-shadow: 0 0 0 2px rgba(201, 151, 28, 0.3); }
+    100% { transform: scale(1.3); box-shadow: 0 0 0 5px rgba(201, 151, 28, 0.15); }
+  }
+
+  /* Ledger History Timeline */
+  .section-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ledger-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ledger-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    background: #FFFFFF;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    transition: transform 0.15s ease;
+  }
+
+  .ledger-left {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .ledger-desc {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ledger-date {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .ledger-right {
+    text-align: right;
+  }
+
+  .ledger-amount {
+    font-size: 14.5px;
+    font-weight: 800;
+    font-family: 'Noto Sans', -apple-system, sans-serif;
+  }
+
+  .ledger-amount.debit {
+    color: var(--red-due);
+  }
+
+  .ledger-amount.credit {
+    color: var(--green-profit);
+  }
+
+  .ledger-balance {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .loading-spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(30, 58, 138, 0.2);
+    border-radius: 50%;
+    border-top-color: var(--primary);
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .footer-note {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .lang-toggle {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* Customer Preferences & Push Notifications Toggle */
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+  }
+  .setting-info {
+    flex: 1;
+  }
+  .setting-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .setting-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    line-height: 1.35;
+  }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: .3s ease;
+    border-radius: 24px;
+  }
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s ease;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  input:checked + .slider {
+    background-color: var(--brand-blue);
+  }
+  input:checked + .slider:before {
+    transform: translateX(20px);
+  }
+  .status-pill {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 12px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .pill-active {
+    background: #DCFCE7;
+    color: #15803D;
+  }
+  .pill-default {
+    background: #F1F5F9;
+    color: #64748B;
+  }
+  .pill-warning {
+    background: #FEF3C7;
+    color: #B45309;
+  }
+  .pill-error {
+    background: #FEE2E2;
+    color: #DC2626;
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="appRoot">
+  <!-- Loading state -->
+  <div style="text-align: center; padding: 60px 20px;" id="loadingState">
+    <div class="loading-spinner"></div>
+    <p style="margin-top: 14px; font-weight: 600; color: var(--text-secondary);" id="loadingText">Loading digital khata...</p>
+  </div>
+
+  <!-- Main Content (Hidden initially) -->
+  <div id="mainContent" style="display: none;">
+    <!-- Store & Customer Header -->
+    <header class="store-header">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div class="store-badge">🏪 Digital Khata</div>
+        <button class="lang-toggle" id="langBtn">বাং</button>
+      </div>
+      <h1 class="store-name" id="storeNameText">Kali Mata Variety Store</h1>
+      <p class="store-address" id="storeAddressText">Store Statement & Ledger</p>
+
+      <div class="customer-card-header">
+        <div>
+          <div class="customer-name" id="custNameText">Customer</div>
+          <div class="customer-phone" id="custPhoneText">--</div>
+        </div>
+        <div style="font-size: 11px; font-weight: 600; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px;" id="liveSyncBadge">
+          ● Live Sync
+        </div>
+      </div>
+    </header>
+
+    <!-- Payment Claim Status Notification Banner (if any) -->
+    <div id="claimBannerContainer"></div>
+
+    <!-- Balance & Quick Action Card -->
+    <div class="balance-card">
+      <div class="balance-label" id="balanceLabel">Current Due Balance</div>
+      <div class="balance-amount due" id="balanceAmountText">₹0.00</div>
+      <div class="balance-status-tag tag-due" id="balanceTag">Payment Due</div>
+
+      <!-- Principal & Interest Breakdown (Visible when interest or dues apply) -->
+      <div id="interestBreakdownContainer" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border-color); text-align: left;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;" id="breakdownTitle">
+          Balance Breakdown
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+          <span style="color: var(--text-secondary);" id="principalLabel">Principal Due</span>
+          <span style="font-weight: 700; color: var(--text-primary);" id="principalAmountText">₹0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+          <span style="color: var(--text-secondary);" id="interestLabel">Late Interest (Accrued)</span>
+          <span style="font-weight: 700; color: var(--red-due);" id="interestAmountText">+₹0.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 800; padding-top: 6px; border-top: 1px solid var(--border-color); margin-top: 4px;">
+          <span id="netBalanceLabel">Net Balance</span>
+          <span style="color: var(--red-due);" id="netBalanceAmountText">₹0.00</span>
+        </div>
+        <!-- Interest Policy Disclaimer -->
+        <div id="interestPolicyText" style="margin-top: 8px; font-size: 11px; color: var(--text-secondary); background: #F8FAFC; padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid #E2E8F0; line-height: 1.4;">
+          Interest of 2.0%/month applies after 45 days grace period.
+        </div>
+      </div>
+    </div>
+
+    <!-- Embedded Payment Toolkit Card (QR + Download + Copy UPI ID + Claim Action) -->
+    <div class="payment-toolkit-card" id="paymentToolkitCard">
+      <div class="toolkit-header">
+        <div class="toolkit-title">
+          <span>⚡</span> <span id="toolkitTitle">Quick UPI Payment</span>
+        </div>
+        <span class="toolkit-sub" id="toolkitSub">Instant Settlement</span>
+      </div>
+
+      <!-- Dynamic QR Code -->
+      <div class="qr-box" id="khataQrCode"></div>
+      <p class="qr-hint" id="qrHintText">Scan via PhonePe, Google Pay, Paytm or any UPI app to pay.</p>
+
+      <!-- Download QR Button -->
+      <button type="button" class="btn-download-qr" id="khataDownloadQrBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span id="downloadQrBtnText">Download QR Code</span>
+      </button>
+
+      <!-- Copy Merchant UPI ID Row -->
+      <div class="upi-copy-row">
+        <span class="upi-copy-label" id="upiCopyLabel">Merchant UPI ID</span>
+        <div class="upi-copy-pill">
+          <span class="upi-copy-text" id="khataUpiIdText">--</span>
+          <button type="button" class="copy-upi-btn" id="khataCopyUpiBtn">Copy</button>
+        </div>
+      </div>
+
+      <!-- "I've Paid" Self-Report Action -->
+      <div class="claim-prompt-box">
+        <button type="button" class="btn-ive-paid" id="openClaimModalBtn">
+          <span>✓</span>
+          <span id="ivePaidBtnText">I've Paid — Report Payment</span>
+        </button>
+        <div class="claim-prompt-hint" id="ivePaidHintText">
+          Paid using this QR? Report the amount & reference here to update your ledger.
+        </div>
+      </div>
+    </div>
+
+    <!-- Ledger Transaction History Section -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">
+          <span>📜</span> <span id="historyTitle">Transaction History</span>
+        </div>
+        <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);" id="entryCountText">0 entries</span>
+      </div>
+
+      <div class="ledger-list" id="ledgerList">
+        <div class="empty-state">No transaction records found.</div>
+      </div>
+    </div>
+
+    <!-- Customer Preferences & Push Notifications Settings Card -->
+    <div class="section-card" id="settingsSectionCard">
+      <div class="section-header" style="margin-bottom: 8px;">
+        <div class="section-title">
+          <span>🔔</span> <span id="notificationSettingsTitle">Alerts & Preferences</span>
+        </div>
+        <span id="notifStatusBadge" class="status-pill pill-default">Off</span>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <div class="setting-title" id="notifToggleLabel">Browser Push Notifications</div>
+          <div class="setting-desc" id="notifToggleDesc">Get instant alerts on this device when new purchases or payments are recorded on your khata.</div>
+        </div>
+        <label class="switch" title="Toggle push notifications">
+          <input type="checkbox" id="browserPushNotifToggle" aria-label="Toggle Browser Push Notifications">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div id="notifPermissionNotice" style="display: none; margin-top: 8px; font-size: 11px; padding: 8px 10px; border-radius: 8px; line-height: 1.4;"></div>
+    </div>
+
+    <div class="footer-note">
+      🔒 Securely synchronized with Store Cloud Khata • Real-time Updates
+    </div>
+  </div>
+
+  <!-- Self-Report "I've Paid" Modal -->
+  <div class="modal-overlay" id="claimModal">
+    <div class="modal-card">
+      <h3 class="modal-title" id="modalTitle">Report UPI Payment</h3>
+      <p class="modal-subtitle" id="modalSubtitle">Submit payment details for shopkeeper confirmation.</p>
+
+      <form id="claimForm">
+        <div class="form-group">
+          <label class="form-label" id="amountLabel">Amount Paid (₹)</label>
+          <input type="number" step="any" min="1" class="form-input" id="claimAmountInput" required />
+          <div class="quick-amounts" id="quickAmountsContainer"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" id="noteLabel">Note / UPI Ref / UTR (Optional)</label>
+          <input type="text" class="form-input" id="claimNoteInput" placeholder="e.g., GPay / PhonePe / UTR 1234..." />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" id="screenshotLabel">Payment Screenshot (Optional)</label>
+          <input type="file" class="form-input" id="claimScreenshotInput" accept="image/*" />
+          <div id="screenshotPreviewContainer" style="display: none; margin-top: 8px; position: relative;">
+            <img id="screenshotPreviewImg" alt="Screenshot Preview" style="max-height: 140px; border-radius: 8px; border: 1px solid var(--border-color); object-fit: contain; width: 100%; background: #f8fafc; display: block;" />
+            <button type="button" id="removeScreenshotBtn" title="Remove Screenshot" style="position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.65); color: #fff; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1;">✕</button>
+          </div>
+        </div>
+
+        <!-- 5-Step Pipeline Stepper (read → compress → encode → check → upload) -->
+        <div id="claimStageIndicator" style="display: none;">
+          <div class="stage-stepper">
+            <div class="stage-step" id="step-read">
+              <div class="step-dot"></div>
+              <span class="step-label" id="lbl-read">Read</span>
+            </div>
+            <div class="step-connector" id="conn-1"></div>
+            <div class="stage-step" id="step-compress">
+              <div class="step-dot"></div>
+              <span class="step-label" id="lbl-compress">Compress</span>
+            </div>
+            <div class="step-connector" id="conn-2"></div>
+            <div class="stage-step" id="step-encode">
+              <div class="step-dot"></div>
+              <span class="step-label" id="lbl-encode">Encode</span>
+            </div>
+            <div class="step-connector" id="conn-3"></div>
+            <div class="stage-step" id="step-check">
+              <div class="step-dot"></div>
+              <span class="step-label" id="lbl-check">Check</span>
+            </div>
+            <div class="step-connector" id="conn-4"></div>
+            <div class="stage-step" id="step-upload">
+              <div class="step-dot"></div>
+              <span class="step-label" id="lbl-upload">Upload</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="claimErrorContainer" style="display: none; margin-bottom: 12px;"></div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel" id="cancelClaimBtn">Cancel</button>
+          <button type="submit" class="btn btn-submit" id="submitClaimBtn">Submit Payment Claim</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  let isBengali = false;
+  let currentCustomer = null;
+  let currentClaims = [];
+  let currentLedger = [];
+  let interestSettings = {
+    enabled: false,
+    monthlyRate: 2.0,
+    gracePeriodDays: 45,
+    calculationMode: "SIMPLE",
+    disclaimerText: "Interest of {rate}%/month applies after {grace_days} days grace period on unpaid balance."
+  };
+  let storeConfig = {
+    storeName: "Kali Mata Variety Store",
+    storeAddress: "Store Khata",
+    upiVpa: "9609319228-1@okbizaxis",
+    payeeName: "SHUVAJITSOW"
+  };
+
+  // 1. Firebase Config Setup (Single Primary Configuration)
+  const primaryFirebaseConfig = {
+    apiKey: "AIzaSyAgRMYISbgrFm7R6yz8EhdnDidOiriZVRQ",
+    authDomain: "amar-dukan-40808.firebaseapp.com",
+    projectId: "amar-dukan-40808",
+    storageBucket: "amar-dukan-40808.firebasestorage.app",
+    messagingSenderId: "645499359222",
+    appId: "1:645499359222:web:47298abf2f843d63fa01d7"
+  };
+
+  let db = null;
+  if (!firebase.apps.length) {
+    try {
+      firebase.initializeApp(primaryFirebaseConfig);
+      db = firebase.firestore();
+    } catch(e) {
+      console.error("Firebase init error:", e);
+      loadingState.style.display = 'block';
+      if (mainContent) mainContent.style.display = 'none';
+      loadingState.innerHTML = `
+        <div style="color: var(--red-due); font-size: 38px; margin-bottom: 8px;">❌</div>
+        <h3 style="color: var(--text-primary); margin-bottom: 6px; font-size: 17px;">Firebase Initialization Error</h3>
+        <div style="background: #fff0f0; border: 1px solid #ffcdd2; border-radius: 8px; padding: 12px 14px; text-align: left; margin: 12px auto; max-width: 480px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; color: #b71c1c; word-break: break-word;">
+          Firebase failed to initialize: ${escapeHtml(e.message || String(e))}
+        </div>
+        <button onclick="window.location.reload()" style="background: var(--brand-blue); color: #fff; border: none; padding: 8px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; margin-top: 6px;">🔄 Retry</button>
+      `;
+      return;
+    }
+  } else {
+    db = firebase.firestore();
+  }
+
+  // Extract shareToken from query parameters or path
+  const urlParams = new URLSearchParams(window.location.search);
+  let shareToken = (urlParams.get('token') || urlParams.get('t') || urlParams.get('id') || '').trim();
+  
+  if (!shareToken) {
+    // Try extract from path e.g. /khata/TOKEN or /TOKEN
+    const parts = window.location.pathname.split('/').filter(p => p && p !== 'khata' && p !== 'index.html');
+    if (parts.length > 0 && parts[0].length > 5) {
+      shareToken = parts[0].trim();
+    }
+  }
+
+  const loadingState = document.getElementById('loadingState');
+  const loadingText = document.getElementById('loadingText');
+  const mainContent = document.getElementById('mainContent');
+  const claimModal = document.getElementById('claimModal');
+  const cancelClaimBtn = document.getElementById('cancelClaimBtn');
+  const claimForm = document.getElementById('claimForm');
+  const langBtn = document.getElementById('langBtn');
+
+  langBtn.addEventListener('click', () => {
+    isBengali = !isBengali;
+    langBtn.textContent = isBengali ? 'Eng' : 'বাং';
+    renderUI();
+  });
+
+  cancelClaimBtn.addEventListener('click', () => {
+    claimModal.classList.remove('active');
+    hideClaimError();
+  });
+
+  initNotificationSettings();
+
+  if (!shareToken) {
+    loadingState.innerHTML = `
+      <div style="color: var(--secondary); font-size: 38px; margin-bottom: 8px;">📒</div>
+      <h3 style="color: var(--text-primary); margin-bottom: 6px; font-size: 18px;">Welcome to Digital Khata</h3>
+      <p style="color: var(--text-secondary); font-size: 13px; max-width: 380px; margin: 0 auto 16px auto; line-height: 1.5;">
+        To view your personal credit ledger, please open the private share link sent to you by the shopkeeper, or browse the online storefront.
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+        <a href="/shop/" style="display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: #fff; text-decoration: none; padding: 10px 18px; border-radius: var(--radius-md); font-weight: 700; font-size: 13px;">
+          🛍️ Visit Online Store
+        </a>
+        <a href="/" style="display: inline-flex; align-items: center; gap: 6px; background: #fff; color: var(--text-primary); border: 1px solid var(--border-color); text-decoration: none; padding: 10px 18px; border-radius: var(--radius-md); font-weight: 600; font-size: 13px;">
+          🏠 Enter Khata Code
+        </a>
+      </div>
+    `;
+    return;
+  }
+
+  // 2. Fetch Store Info & Interest Settings
+  db.collection('store_settings').doc('general').onSnapshot(doc => {
+    if (doc.exists) {
+      const data = doc.data() || {};
+      if (data.store_name) storeConfig.storeName = data.store_name;
+      if (data.store_address) storeConfig.storeAddress = data.store_address;
+      if (data.upi_vpa) storeConfig.upiVpa = data.upi_vpa;
+      if (data.payee_name || data.merchant_payee_name) storeConfig.payeeName = data.payee_name || data.merchant_payee_name;
+      renderStoreInfo();
+      if (currentCustomer) {
+        renderUI();
+      }
+    }
+  }, err => console.log('Store settings read fallback'));
+
+  db.collection('store_settings').doc('interest_settings').onSnapshot(doc => {
+    if (doc.exists) {
+      const data = doc.data() || {};
+      interestSettings.enabled = data.interest_enabled === true || data.enabled === true;
+      interestSettings.monthlyRate = data.monthly_interest_rate ?? data.monthlyRate ?? 2.0;
+      interestSettings.gracePeriodDays = data.grace_period_days ?? data.gracePeriodDays ?? 45;
+      interestSettings.calculationMode = data.calculation_mode ?? data.calculationMode ?? "SIMPLE";
+      interestSettings.disclaimerText = data.bill_disclaimer_text ?? data.disclaimerText ?? "Interest of {rate}%/month applies after {grace_days} days grace period on unpaid balance.";
+      renderUI();
+    }
+  }, err => console.log('Interest settings notice:', err));
+
+  // 3. Resolve Customer ID via shareLinks/{token} get(), with resilient fallback to direct customer ID lookup and query
+  let customerUnsub = null;
+  let ledgerUnsub = null;
+  let claimsUnsub = null;
+  let connectionTimeoutTimer = null;
+  let customerSnapshotTimeoutTimer = null;
+
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function showOnScreenError(stepTitle, errorCode, errorMessage, extraDetails = '') {
+    if (connectionTimeoutTimer) {
+      clearTimeout(connectionTimeoutTimer);
+      connectionTimeoutTimer = null;
+    }
+    if (customerSnapshotTimeoutTimer) {
+      clearTimeout(customerSnapshotTimeoutTimer);
+      customerSnapshotTimeoutTimer = null;
+    }
+    loadingState.style.display = 'block';
+    mainContent.style.display = 'none';
+    loadingState.innerHTML = `
+      <div style="color: var(--red-due); font-size: 38px; margin-bottom: 8px;">❌</div>
+      <h3 style="color: var(--text-primary); margin-bottom: 6px; font-size: 17px;">Khata Loading Error</h3>
+      <div style="background: #fff0f0; border: 1px solid #ffcdd2; border-radius: 8px; padding: 12px 14px; text-align: left; margin: 12px auto; max-width: 480px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; color: #b71c1c; word-break: break-word; line-height: 1.5;">
+        <div><strong>Failed Step:</strong> ${escapeHtml(stepTitle)}</div>
+        <div style="margin-top: 4px;"><strong>Error Code:</strong> <span style="background: #ffebee; padding: 1px 6px; border-radius: 4px; font-weight: bold;">${escapeHtml(errorCode || 'unknown')}</span></div>
+        <div style="margin-top: 4px;"><strong>Firebase Message:</strong> ${escapeHtml(errorMessage || 'No message')}</div>
+        ${extraDetails ? `<div style="margin-top: 4px; color: #4b5563;"><strong>Details:</strong> ${escapeHtml(extraDetails)}</div>` : ''}
+        <div style="margin-top: 6px; font-size: 11px; color: #6b7280;">Token: ${escapeHtml(shareToken)}</div>
+      </div>
+      <button onclick="window.location.reload()" style="background: var(--brand-blue); color: #fff; border: none; padding: 8px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; margin-top: 6px;">🔄 Retry</button>
+    `;
+  }
+
+  async function resolveAndConnectCustomer() {
+    try {
+      let resolvedCustomerId = null;
+
+      // The ONLY resolution path: get() on shareLinks/{token}
+      try {
+        const linkDoc = await db.collection('shareLinks').doc(shareToken).get();
+        if (linkDoc.exists) {
+          const lData = linkDoc.data() || {};
+          if (lData.customerId) {
+            resolvedCustomerId = lData.customerId;
+          }
+        }
+      } catch (err) {
+        console.error('shareLinks lookup error:', err);
+        showOnScreenError(
+          `shareLinks lookup (shareLinks/${shareToken})`,
+          err.code || 'permission-denied',
+          err.message || 'Failed to read shareLinks document',
+          'Firestore get() request failed. Check Firestore security rules for collection "shareLinks".'
+        );
+        return;
+      }
+
+      if (!resolvedCustomerId) {
+        showOnScreenError(
+          `shareLinks lookup (shareLinks/${shareToken})`,
+          'not-found',
+          `Document "shareLinks/${shareToken}" does not exist or has no customerId.`,
+          'The link may be expired, invalid, or was revoked in the app.'
+        );
+        return;
+      }
+
+      // Open real-time onSnapshot listener directly on customers/{customerId} with 8s timeout guard
+      if (customerUnsub) customerUnsub();
+
+      customerSnapshotTimeoutTimer = setTimeout(() => {
+        if (loadingState.style.display !== 'none' && !currentCustomer) {
+          showOnScreenError(
+            `customers listener (customers/${resolvedCustomerId})`,
+            'timeout / not-found',
+            `Customer record not found or listener did not receive data within 8 seconds.`,
+            `The document "customers/${resolvedCustomerId}" may not exist, or Firestore security rules might be preventing access.`
+          );
+        }
+      }, 8000);
+
+      customerUnsub = db.collection('customers').doc(resolvedCustomerId).onSnapshot(doc => {
+        if (customerSnapshotTimeoutTimer) {
+          clearTimeout(customerSnapshotTimeoutTimer);
+          customerSnapshotTimeoutTimer = null;
+        }
+        if (connectionTimeoutTimer) {
+          clearTimeout(connectionTimeoutTimer);
+          connectionTimeoutTimer = null;
+        }
+
+        if (!doc.exists) {
+          showOnScreenError(
+            `Customer document lookup (customers/${resolvedCustomerId})`,
+            'not-found',
+            `Customer record with ID "${resolvedCustomerId}" does not exist in the database.`
+          );
+          return;
+        }
+
+        currentCustomer = { id: doc.id, ...doc.data() };
+
+        loadingState.style.display = 'none';
+        mainContent.style.display = 'block';
+
+        // Setup listeners for ledger entries and payment claims
+        setupCustomerSubListeners(currentCustomer.id);
+        renderUI();
+      }, error => {
+        if (customerSnapshotTimeoutTimer) {
+          clearTimeout(customerSnapshotTimeoutTimer);
+          customerSnapshotTimeoutTimer = null;
+        }
+        if (connectionTimeoutTimer) {
+          clearTimeout(connectionTimeoutTimer);
+          connectionTimeoutTimer = null;
+        }
+        console.error('Error listening to customer by ID:', error);
+        showOnScreenError(
+          `customers listener (customers/${resolvedCustomerId})`,
+          error.code || 'permission-denied',
+          error.message || 'Failed to listen to customer document',
+          'Check Firestore security rules on Firebase Console for "customers" collection.'
+        );
+      });
+
+    } catch (globalErr) {
+      if (customerSnapshotTimeoutTimer) {
+        clearTimeout(customerSnapshotTimeoutTimer);
+        customerSnapshotTimeoutTimer = null;
+      }
+      if (connectionTimeoutTimer) {
+        clearTimeout(connectionTimeoutTimer);
+        connectionTimeoutTimer = null;
+      }
+      console.error('Error resolving share link token:', globalErr);
+      showOnScreenError(
+        'Resolving share link token',
+        globalErr.code || 'exception',
+        globalErr.message || String(globalErr)
+      );
+    }
+  }
+
+  if (shareToken) {
+    resolveAndConnectCustomer();
+  }
+
+  let isInitialLedgerLoad = true;
+  let isLedgerLoaded = false;
+  let knownEntryIds = new Set();
+  const NOTIF_STORAGE_PREFIX = 'khata_push_notif_enabled_';
+
+  function getNotifStorageKey() {
+    return NOTIF_STORAGE_PREFIX + (shareToken || (currentCustomer ? currentCustomer.id : 'default'));
+  }
+
+  function calculateLiveBalance() {
+    if (!isLedgerLoaded) {
+      return currentCustomer ? (currentCustomer.balance || 0) : 0;
+    }
+    let balance = 0;
+    for (const entry of currentLedger) {
+      const type = (entry.type || '').toUpperCase();
+      const amt = Math.abs(Number(entry.amount) || 0);
+      if (['DEBIT', 'SALE_CREDIT', 'CREDIT_SALE', 'INTEREST', 'ACCRUED_INTEREST', 'INTEREST_APPLIED'].includes(type)) {
+        balance += amt;
+      } else if (['CREDIT', 'PAYMENT', 'PAYMENT_RECEIVED', 'PAYMENT_IN', 'RETURN', 'SALE_RETURN'].includes(type)) {
+        balance -= amt;
+      } else {
+        balance += (Number(entry.amount) || 0);
+      }
+    }
+    return balance;
+  }
+
+  function setupCustomerSubListeners(customerId) {
+    if (ledgerUnsub) ledgerUnsub();
+    if (claimsUnsub) claimsUnsub();
+
+    isInitialLedgerLoad = true;
+    isLedgerLoaded = false;
+    knownEntryIds.clear();
+
+    // Listen for Public Ledger Subcollection
+    ledgerUnsub = db.collection('customers').doc(customerId).collection('public_ledger')
+      .onSnapshot(snap => {
+        const isFirstSnapshot = isInitialLedgerLoad;
+        isLedgerLoaded = true;
+        currentLedger = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Sort descending by date/timestamp/datetime
+        currentLedger.sort((a, b) => {
+          const tA = a.datetime || a.date || a.timestamp || 0;
+          const tB = b.datetime || b.date || b.timestamp || 0;
+          return tB - tA;
+        });
+
+        if (isFirstSnapshot) {
+          snap.docs.forEach(d => knownEntryIds.add(d.id));
+          isInitialLedgerLoad = false;
+        } else {
+          // Identify newly added ledger entries and trigger browser push notification
+          snap.docChanges().forEach(change => {
+            if (change.type === 'added' && !knownEntryIds.has(change.doc.id)) {
+              knownEntryIds.add(change.doc.id);
+              const newEntry = change.doc.data() || {};
+              dispatchLedgerPushNotification(newEntry);
+            }
+          });
+        }
+
+        renderUI();
+      }, err => {
+        console.log('Public ledger sync notice:', err);
+        // If public_ledger read had an issue, fallback to rendering with stored customer state
+        isLedgerLoaded = true;
+        renderUI();
+      });
+
+    // Listen for Payment Claims directly on customer subcollection
+    claimsUnsub = db.collection('customers')
+      .doc(customerId)
+      .collection('payment_claims')
+      .onSnapshot(snap => {
+        currentClaims = snap.docs.map(d => ({ id: d.id, customerId: customerId, ...d.data() }));
+        currentClaims.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        renderClaimsBanner();
+      }, err => console.log('Claims sync notice:', err));
+  }
+
+  function dispatchLedgerPushNotification(entry) {
+    const isEnabled = localStorage.getItem(getNotifStorageKey()) === 'true';
+    if (!isEnabled || !('Notification' in window) || Notification.permission !== 'granted') {
+      return;
+    }
+
+    const typeStr = (entry.type || '').toUpperCase();
+    const isInterest = typeStr.includes('INTEREST');
+    const isDebit = typeStr === 'DEBIT' || typeStr === 'SALE_CREDIT' || isInterest || (entry.amount > 0 && typeStr !== 'CREDIT' && typeStr !== 'PAYMENT_RECEIVED');
+    const amtFormatted = Math.abs(entry.amount || entry.total || 0).toFixed(2);
+    const store = storeConfig.storeName || 'Digital Khata';
+    const noteText = entry.description || entry.notes || entry.note || '';
+
+    let title = '';
+    let body = '';
+
+    if (isBengali) {
+      title = `🏪 ${store} • নতুন খাতা এন্ট্রি`;
+      if (isInterest) {
+        body = `বিলম্ব সুদ যোগ হয়েছে: +₹${amtFormatted}। ${noteText ? 'বিবরণ: ' + noteText : ''}`;
+      } else if (isDebit) {
+        body = `নতুন বাকি ক্রয় যোগ হয়েছে: +₹${amtFormatted}। ${noteText ? 'নোট: ' + noteText : ''}`;
+      } else {
+        body = `পেমেন্ট জমা হয়েছে: -₹${amtFormatted}। ${noteText ? 'নোট: ' + noteText : ''}`;
+      }
+    } else {
+      title = `🏪 ${store} • New Ledger Entry`;
+      if (isInterest) {
+        body = `Late interest accrued: +₹${amtFormatted}. ${noteText ? 'Desc: ' + noteText : ''}`;
+      } else if (isDebit) {
+        body = `Credit purchase added: +₹${amtFormatted}. ${noteText ? 'Note: ' + noteText : ''}`;
+      } else {
+        body = `Payment credited: -₹${amtFormatted}. ${noteText ? 'Note: ' + noteText : ''}`;
+      }
+    }
+
+    try {
+      const notif = new Notification(title, {
+        body: body,
+        icon: 'https://img.icons8.com/fluency/96/receipt-declined.png',
+        tag: 'khata-entry-' + (entry.id || Date.now())
+      });
+      notif.onclick = function() {
+        window.focus();
+        notif.close();
+      };
+    } catch (e) {
+      console.warn('Browser notification error:', e);
+    }
+  }
+
+  function initNotificationSettings() {
+    const toggle = document.getElementById('browserPushNotifToggle');
+    if (!toggle) return;
+
+    toggle.addEventListener('change', async (e) => {
+      const wantEnabled = e.target.checked;
+      const key = getNotifStorageKey();
+
+      if (!('Notification' in window)) {
+        toggle.checked = false;
+        alert(isBengali ? 'এই ব্রাউজার পুশ নোটিফিকেশন সাপোর্ট করে না।' : 'This browser does not support web notifications.');
+        renderNotificationUI();
+        return;
+      }
+
+      if (wantEnabled) {
+        if (Notification.permission === 'granted') {
+          localStorage.setItem(key, 'true');
+          renderNotificationUI();
+          showWelcomeNotification();
+        } else if (Notification.permission === 'denied') {
+          toggle.checked = false;
+          localStorage.setItem(key, 'false');
+          renderNotificationUI();
+          alert(isBengali 
+            ? 'ব্রাউজারে নোটিফিকেশন পারমিশন ব্লক করা আছে। ব্রাউজারের সাইট সেটিংসে গিয়ে নোটিফিকেশন অ্যালাউ করুন।' 
+            : 'Notification permission is blocked in browser settings. Please allow notifications for this site in your browser URL bar.');
+        } else {
+          // Request permission from user
+          try {
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+              localStorage.setItem(key, 'true');
+              toggle.checked = true;
+              renderNotificationUI();
+              showWelcomeNotification();
+            } else {
+              toggle.checked = false;
+              localStorage.setItem(key, 'false');
+              renderNotificationUI();
+            }
+          } catch (permErr) {
+            console.error('Error requesting notification permission:', permErr);
+            toggle.checked = false;
+            localStorage.setItem(key, 'false');
+            renderNotificationUI();
+          }
+        }
+      } else {
+        localStorage.setItem(key, 'false');
+        renderNotificationUI();
+      }
+    });
+  }
+
+  function showWelcomeNotification() {
+    const store = storeConfig.storeName || 'Digital Khata';
+    const title = isBengali ? `🔔 ${store} • নোটিফিকেশন চালু হয়েছে` : `🔔 ${store} • Khata Alerts Enabled`;
+    const body = isBengali
+      ? 'আপনার খাতায় নতুন কোনো বাকি বা পেমেন্ট এন্ট্রি যোগ হলেই আপনি সাথে সাথে নোটিফিকেশন অ্যালার্ট পাবেন।'
+      : 'You will now receive instant push alerts whenever a new purchase or payment is recorded.';
+
+    try {
+      const notif = new Notification(title, {
+        body: body,
+        icon: 'https://img.icons8.com/fluency/96/bell.png',
+        tag: 'khata-welcome'
+      });
+      notif.onclick = function() {
+        window.focus();
+        notif.close();
+      };
+    } catch (err) {
+      console.warn('Welcome notification warning:', err);
+    }
+  }
+
+  function renderNotificationUI() {
+    const titleEl = document.getElementById('notificationSettingsTitle');
+    const labelEl = document.getElementById('notifToggleLabel');
+    const descEl = document.getElementById('notifToggleDesc');
+    const toggle = document.getElementById('browserPushNotifToggle');
+    const badgeEl = document.getElementById('notifStatusBadge');
+    const noticeEl = document.getElementById('notifPermissionNotice');
+
+    if (!toggle || !badgeEl) return;
+
+    if (titleEl) titleEl.textContent = isBengali ? 'অ্যালার্ট ও নোটিফিকেশন সেটিংস' : 'Alerts & Preferences';
+    if (labelEl) labelEl.textContent = isBengali ? 'ব্রাউজার পুশ নোটিফিকেশন' : 'Browser Push Notifications';
+    if (descEl) descEl.textContent = isBengali 
+      ? 'আপনার খাতায় নতুন বাকি ক্রয় বা পেমেন্ট জমা হলে এই ডিভাইসে তাৎক্ষণিক নোটিফিকেশন অ্যালার্ট পান।' 
+      : 'Get instant alerts on this device when new purchases or payments are recorded on your khata.';
+
+    if (!('Notification' in window)) {
+      toggle.checked = false;
+      toggle.disabled = true;
+      badgeEl.className = 'status-pill pill-warning';
+      badgeEl.textContent = isBengali ? 'সাপোর্টেড নয়' : 'Not Supported';
+      if (noticeEl) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.background = '#FEF3C7';
+        noticeEl.style.color = '#92400E';
+        noticeEl.textContent = isBengali 
+          ? 'এই ব্রাউজারে পুশ নোটিফিকেশন ফিচারটি সমর্থিত নয়।' 
+          : 'Browser push notifications are not supported on this browser/environment.';
+      }
+      return;
+    }
+
+    toggle.disabled = false;
+    const isStoredEnabled = localStorage.getItem(getNotifStorageKey()) === 'true';
+
+    if (Notification.permission === 'denied') {
+      toggle.checked = false;
+      badgeEl.className = 'status-pill pill-error';
+      badgeEl.textContent = isBengali ? 'ব্লকড (Blocked)' : 'Blocked';
+      if (noticeEl) {
+        noticeEl.style.display = 'block';
+        noticeEl.style.background = '#FEE2E2';
+        noticeEl.style.color = '#991B1B';
+        noticeEl.textContent = isBengali 
+          ? '⚠️ ব্রাউজারের সাইট পারমিশনে নোটিফিকেশন ব্লক করা আছে। এড্রেস বারের লক আইকনে ট্যাপ করে নোটিফিকেশন অ্যালাউ করুন।' 
+          : '⚠️ Notifications are blocked by your browser. Please tap the lock icon in the URL bar to allow notifications.';
+      }
+    } else if (Notification.permission === 'granted' && isStoredEnabled) {
+      toggle.checked = true;
+      badgeEl.className = 'status-pill pill-active';
+      badgeEl.textContent = isBengali ? 'সক্রিয় (Active)' : 'Active';
+      if (noticeEl) {
+        noticeEl.style.display = 'none';
+      }
+    } else {
+      toggle.checked = false;
+      badgeEl.className = 'status-pill pill-default';
+      badgeEl.textContent = isBengali ? 'বন্ধ (Off)' : 'Off';
+      if (noticeEl) {
+        noticeEl.style.display = 'none';
+      }
+    }
+  }
+
+  function renderStoreInfo() {
+    document.getElementById('storeNameText').textContent = storeConfig.storeName;
+    document.getElementById('storeAddressText').textContent = storeConfig.storeAddress;
+  }
+
+  function renderUI() {
+    if (!currentCustomer) return;
+    renderStoreInfo();
+
+    // Customer Info
+    document.getElementById('custNameText').textContent = currentCustomer.name || 'Customer';
+    document.getElementById('custPhoneText').textContent = currentCustomer.phone || (isBengali ? 'ফোন নেই' : 'No Phone');
+
+    // Balance (Live calculated from public ledger)
+    const balance = calculateLiveBalance();
+    const balanceEl = document.getElementById('balanceAmountText');
+    const balanceLabelEl = document.getElementById('balanceLabel');
+    const balanceTagEl = document.getElementById('balanceTag');
+
+    const formattedBal = Math.abs(balance).toFixed(2);
+
+    if (balance > 0.001) {
+      // Due (Customer owes money)
+      balanceEl.textContent = `₹${formattedBal}`;
+      balanceEl.className = 'balance-amount due';
+      balanceLabelEl.textContent = isBengali ? 'বর্তমান মোট বাকি বকেয়া (Dr)' : 'Current Due Balance (Dr)';
+      balanceTagEl.textContent = isBengali ? '● বাকি আছে' : 'Payment Due';
+      balanceTagEl.className = 'balance-status-tag tag-due';
+    } else if (balance < -0.001) {
+      // Advance (Customer paid extra)
+      balanceEl.textContent = `₹${formattedBal}`;
+      balanceEl.className = 'balance-amount advance';
+      balanceLabelEl.textContent = isBengali ? 'আপনার অগ্রিম জমা (Cr)' : 'Advance Balance (Cr)';
+      balanceTagEl.textContent = isBengali ? '● জমা আছে' : 'Advance';
+      balanceTagEl.className = 'balance-status-tag tag-advance';
+    } else {
+      // Settled
+      balanceEl.textContent = `₹0.00`;
+      balanceEl.className = 'balance-amount settled';
+      balanceLabelEl.textContent = isBengali ? 'হিসাব সম্পন্ন' : 'Settled Balance';
+      balanceTagEl.textContent = isBengali ? '● কোনো বাকি নেই' : 'No Dues';
+      balanceTagEl.className = 'balance-status-tag tag-settled';
+    }
+
+    // Balance Breakdown & Interest Transparency
+    const breakdown = computeInterestBreakdown();
+    const breakdownContainer = document.getElementById('interestBreakdownContainer');
+    const shouldShowBreakdown = (interestSettings.enabled && !breakdown.isExempt && (breakdown.interest > 0 || breakdown.net > 0)) || breakdown.interest > 0;
+
+    if (shouldShowBreakdown && breakdown.net > 0.001) {
+      breakdownContainer.style.display = 'block';
+      document.getElementById('breakdownTitle').textContent = isBengali ? 'হিসাব বিভাজন (বকেয়া বনাম সুদ)' : 'Balance Breakdown';
+      document.getElementById('principalLabel').textContent = isBengali ? 'মূল বকেয়া (Principal Due)' : 'Principal Due';
+      document.getElementById('principalAmountText').textContent = `₹${breakdown.principal.toFixed(2)}`;
+      
+      document.getElementById('interestLabel').textContent = isBengali ? 'দেরি সুদ (Late Interest)' : 'Late Interest';
+      document.getElementById('interestAmountText').textContent = `+₹${breakdown.interest.toFixed(2)}`;
+      
+      document.getElementById('netBalanceLabel').textContent = isBengali ? 'সর্বমোট প্রদেয় (Net Balance)' : 'Net Total Due';
+      document.getElementById('netBalanceAmountText').textContent = `₹${breakdown.net.toFixed(2)}`;
+
+      const policyMsg = (interestSettings.disclaimerText || "Interest of {rate}%/month applies after {grace_days} days grace period.")
+        .replace('{rate}', breakdown.rate.toFixed(1))
+        .replace('{grace_days}', breakdown.grace.toString())
+        .replace('{mode}', interestSettings.calculationMode);
+
+      document.getElementById('interestPolicyText').textContent = isBengali
+        ? `শর্তাবলী: ${breakdown.grace} দিন নির্ধারিত সময়ের পর প্রতি মাসে ${breakdown.rate}% হারে বিলম্ব সুদ প্রযোজ্য হবে।`
+        : `Policy: ${policyMsg}`;
+    } else {
+      breakdownContainer.style.display = 'none';
+    }
+
+    // History Title & Modal labels
+    document.getElementById('historyTitle').textContent = isBengali ? 'খাতা লেনদেন বিবরণী' : 'Transaction History';
+    document.getElementById('modalTitle').textContent = isBengali ? 'UPI পেমেন্ট রিপোর্ট করুন' : 'Report UPI Payment';
+    document.getElementById('modalSubtitle').textContent = isBengali 
+      ? 'দোকানদার ভেরিফাই করে আপনার খাতায় জমা করবেন।' 
+      : 'Submit payment details for shopkeeper confirmation.';
+    document.getElementById('amountLabel').textContent = isBengali ? 'পরিশোধিত টাকার পরিমাণ (₹)' : 'Amount Paid (₹)';
+    document.getElementById('noteLabel').textContent = isBengali ? 'নোট / ট্রানজাকশন রেফারেন্স / UTR (ঐচ্ছিক)' : 'Note / UPI Ref / UTR (Optional)';
+    const screenshotLabelEl = document.getElementById('screenshotLabel');
+    if (screenshotLabelEl) {
+      screenshotLabelEl.textContent = isBengali ? 'পেমেন্ট স্ক্রিনশট (ঐচ্ছিক)' : 'Payment Screenshot (Optional)';
+    }
+    document.getElementById('cancelClaimBtn').textContent = isBengali ? 'বাতিল' : 'Cancel';
+    document.getElementById('submitClaimBtn').textContent = isBengali ? 'পেমেন্ট ক্লেইম জমা দিন' : 'Submit Payment Claim';
+
+    renderClaimsBanner();
+    renderLedger();
+    renderNotificationUI();
+
+    // Render embedded payment toolkit (QR code, download, copy UPI ID)
+    const effectiveDue = breakdown.net > 0.001 ? breakdown.net : Math.max(0, balance);
+    renderPaymentToolkit(effectiveDue);
+  }
+
+  function renderPaymentToolkit(dueAmount) {
+    const toolkitCard = document.getElementById('paymentToolkitCard');
+    if (!toolkitCard) return;
+
+    // Bilingual label updates
+    const titleEl = document.getElementById('toolkitTitle');
+    const subEl = document.getElementById('toolkitSub');
+    const hintEl = document.getElementById('qrHintText');
+    const dlBtnText = document.getElementById('downloadQrBtnText');
+    const copyLabel = document.getElementById('upiCopyLabel');
+    const copyBtn = document.getElementById('khataCopyUpiBtn');
+    const ivePaidBtnText = document.getElementById('ivePaidBtnText');
+    const ivePaidHintText = document.getElementById('ivePaidHintText');
+
+    if (titleEl) titleEl.textContent = isBengali ? 'তাৎক্ষণিক UPI পেমেন্ট' : 'Quick UPI Payment';
+    if (subEl) subEl.textContent = isBengali ? 'সরাসরি জমা' : 'Instant Settlement';
+    if (hintEl) hintEl.textContent = isBengali 
+      ? 'PhonePe, Google Pay, Paytm বা যেকোনো UPI অ্যাপ দিয়ে স্ক্যান করে পেমেন্ট করুন।' 
+      : 'Scan via PhonePe, Google Pay, Paytm or any UPI app to pay.';
+    if (dlBtnText) dlBtnText.textContent = isBengali ? 'QR কোড ডাউনলোড করুন' : 'Download QR Code';
+    if (copyLabel) copyLabel.textContent = isBengali ? 'দোকানের UPI আইডি' : 'Merchant UPI ID';
+    if (ivePaidBtnText) ivePaidBtnText.textContent = isBengali ? 'আমি পরিশোধ করেছি (রিপোর্ট করুন)' : "I've Paid — Report Payment";
+    if (ivePaidHintText) ivePaidHintText.textContent = isBengali
+      ? 'QR দিয়ে পেমেন্ট করার পর রেফারেন্স/স্ক্রিনশট জমা দিলে দোকানদার যাচাই করে খাতা আপডেট করবেন।'
+      : 'Paid using this QR? Report the amount & reference here to update your ledger.';
+
+    const pa = storeConfig.upiVpa || "9609319228-1@okbizaxis";
+    const pn = storeConfig.payeeName || storeConfig.storeName || "Kali Mata Variety Store";
+    const upiIdEl = document.getElementById('khataUpiIdText');
+    if (upiIdEl) upiIdEl.textContent = pa;
+
+    // Setup Copy Button
+    if (copyBtn) {
+      copyBtn.onclick = function() {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(pa).then(() => {
+            copyBtn.textContent = isBengali ? 'কপি হয়েছে' : 'Copied!';
+            copyBtn.classList.add('copied');
+            setTimeout(() => {
+              copyBtn.textContent = isBengali ? 'কপি' : 'Copy';
+              copyBtn.classList.remove('copied');
+            }, 2000);
+          }).catch(() => fallbackCopy(pa, copyBtn));
+        } else {
+          fallbackCopy(pa, copyBtn);
+        }
+      };
+    }
+
+    // Setup Download QR Button
+    const dlBtn = document.getElementById('khataDownloadQrBtn');
+    if (dlBtn) {
+      dlBtn.onclick = function() {
+        downloadKhataQrCode();
+      };
+    }
+
+    // Setup "I've Paid" Button
+    const claimBtn = document.getElementById('openClaimModalBtn');
+    if (claimBtn) {
+      claimBtn.onclick = function() {
+        openClaimModal(dueAmount > 0.001 ? dueAmount : 0);
+      };
+    }
+
+    // Generate Dynamic QR Code
+    const qrContainer = document.getElementById('khataQrCode');
+    if (!qrContainer) return;
+    qrContainer.innerHTML = '';
+
+    const am = dueAmount > 0.001 ? dueAmount.toFixed(2) : "";
+    const tn = `Khata Payment - ${currentCustomer.name || 'Customer'}`;
+    const encodedPn = encodeURIComponent(pn);
+    const encodedTn = encodeURIComponent(tn);
+    const isMerchant = pa.toLowerCase().includes('biz') || pa.toLowerCase().includes('okbiz') || pa.toLowerCase().includes('fbpe');
+    const merchantParams = isMerchant ? '&mc=5411&mode=02&purpose=00' : '';
+    const upiUri = am
+      ? `upi://pay?pa=${encodeURIComponent(pa)}&pn=${encodedPn}&am=${am}&cu=INR&tn=${encodedTn}${merchantParams}`
+      : `upi://pay?pa=${encodeURIComponent(pa)}&pn=${encodedPn}&cu=INR&tn=${encodedTn}${merchantParams}`;
+
+    try {
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(qrContainer, {
+          text: upiUri,
+          width: 180,
+          height: 180,
+          colorDark: "#2B2A28",
+          colorLight: "#FFFFFF",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+    } catch (qrErr) {
+      console.warn("QR code generation error:", qrErr);
+    }
+  }
+
+  function downloadKhataQrCode() {
+    const qrContainer = document.getElementById('khataQrCode');
+    if (!qrContainer) return;
+    const canvas = qrContainer.querySelector('canvas');
+    const img = qrContainer.querySelector('img');
+
+    function exportFromCanvas(sourceCanvas) {
+      const padding = 40;
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = sourceCanvas.width + (padding * 2);
+      finalCanvas.height = sourceCanvas.height + (padding * 2);
+      const ctx = finalCanvas.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+      ctx.drawImage(sourceCanvas, padding, padding);
+
+      const link = document.createElement('a');
+      const safeStoreName = (storeConfig.storeName || 'Amar-Dukan').replace(/[^a-zA-Z0-9_-]/g, '_');
+      link.download = `${safeStoreName}-Payment-QR.png`;
+      link.href = finalCanvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    if (canvas) {
+      exportFromCanvas(canvas);
+    } else if (img && img.src) {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = img.naturalWidth || 180;
+      tempCanvas.height = img.naturalHeight || 180;
+      const ctx = tempCanvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        exportFromCanvas(tempCanvas);
+      }
+    }
+  }
+
+  function fallbackCopy(text, btn) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      if (btn) {
+        btn.textContent = isBengali ? 'কপি হয়েছে' : 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = isBengali ? 'কপি' : 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      }
+    } catch(e) {}
+    document.body.removeChild(ta);
+  }
+
+  function computeInterestBreakdown() {
+    if (!currentCustomer) return { principal: 0, interest: 0, net: 0, isExempt: false, rate: 2.0, grace: 45 };
+    const isExempt = currentCustomer.interestExempt === true;
+    const rate = (currentCustomer.customInterestRate != null && currentCustomer.customInterestRate > 0) 
+      ? currentCustomer.customInterestRate 
+      : (interestSettings.monthlyRate || 2.0);
+    const grace = (currentCustomer.customGracePeriodDays != null && currentCustomer.customGracePeriodDays > 0)
+      ? currentCustomer.customGracePeriodDays
+      : (interestSettings.gracePeriodDays || 45);
+
+    let recordedInterest = 0;
+    currentLedger.forEach(entry => {
+      const type = (entry.type || '').toUpperCase();
+      if (type.includes('INTEREST')) {
+        recordedInterest += (entry.amount || 0);
+      }
+    });
+
+    const netBal = calculateLiveBalance();
+    if (netBal <= 0) {
+      return { principal: Math.max(0, netBal), interest: 0, net: netBal, isExempt, rate, grace };
+    }
+
+    if (recordedInterest > netBal) {
+      recordedInterest = netBal;
+    }
+    const principal = Math.max(0, netBal - recordedInterest);
+
+    return {
+      principal: principal,
+      interest: recordedInterest,
+      net: netBal,
+      isExempt,
+      rate,
+      grace
+    };
+  }
+
+  function getPendingClaim() {
+    const fortyEightHoursAgo = Date.now() - (48 * 60 * 60 * 1000);
+    return currentClaims.find(c => c.status === 'pending' && (c.timestamp || 0) > fortyEightHoursAgo);
+  }
+
+  function getLatestStatusClaim() {
+    if (currentClaims.length === 0) return null;
+    return currentClaims[0];
+  }
+
+  function renderClaimsBanner() {
+    const container = document.getElementById('claimBannerContainer');
+    container.innerHTML = '';
+
+    const pendingClaim = getPendingClaim();
+    if (pendingClaim) {
+      const claimAmt = (pendingClaim.claimedAmount || 0).toFixed(2);
+      const timeStr = formatTimeAgo(pendingClaim.timestamp);
+      container.innerHTML = `
+        <div class="claim-banner pending">
+          <div class="claim-icon">⏳</div>
+          <div>
+            <div class="claim-title">${isBengali ? 'পেমেন্ট যাচাইকরণ বাকি' : 'Payment Awaiting Confirmation'}</div>
+            <div class="claim-desc">
+              ${isBengali 
+                ? `আপনার ₹${claimAmt} পেমেন্ট রিপোর্ট (${timeStr}) দোকানদারের কনফার্মেশনের অপেক্ষায় রয়েছে। কনফার্ম হলে খাতা সাথে সাথে আপডেট হবে।`
+                : `Your reported payment of ₹${claimAmt} (${timeStr}) is awaiting confirmation by the shopkeeper. Ledger will update once confirmed.`}
+            </div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Check for recent rejection (within last 48 hours)
+    const recentRejected = currentClaims.find(c => c.status === 'rejected' && Date.now() - (c.rejectedAt || c.timestamp || 0) < 48 * 60 * 60 * 1000);
+    if (recentRejected) {
+      const claimAmt = (recentRejected.claimedAmount || 0).toFixed(2);
+      const reason = recentRejected.rejectionReason ? ` (${recentRejected.rejectionReason})` : '';
+      container.innerHTML = `
+        <div class="claim-banner rejected">
+          <div class="claim-icon">⚠️</div>
+          <div>
+            <div class="claim-title">${isBengali ? 'পেমেন্ট ক্লেইম গৃহীত হয়নি' : 'Payment Claim Rejected'}</div>
+            <div class="claim-desc">
+              ${isBengali
+                ? `আপনার ₹${claimAmt} পেমেন্ট ক্লেইমটি দোকানদার দ্বারা প্রত্যাখ্যাত হয়েছে${reason}। কোনো জিজ্ঞাসা থাকলে সরাসরি দোকানে যোগাযোগ করুন।`
+                : `Your claim of ₹${claimAmt} was not confirmed by the shopkeeper${reason}. Please check with the shopkeeper or re-submit.`}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  // Screenshot handling & client-side compression (base64 data string directly in Firestore document)
+  const screenshotInput = document.getElementById('claimScreenshotInput');
+  const screenshotPreviewContainer = document.getElementById('screenshotPreviewContainer');
+  const screenshotPreviewImg = document.getElementById('screenshotPreviewImg');
+  const removeScreenshotBtn = document.getElementById('removeScreenshotBtn');
+
+  let currentScreenshotBase64 = null;
+  let currentSubmissionStage = null;
+
+  function hideClaimError() {
+    const el = document.getElementById('claimErrorContainer');
+    if (el) {
+      el.style.display = 'none';
+      el.innerHTML = '';
+    }
+  }
+
+  function showClaimCloudSyncWarning(file, diagnosticInfo = null) {
+    const el = document.getElementById('claimErrorContainer');
+    if (!el) return;
+    el.style.display = 'block';
+
+    const friendlyTitle = isBengali ? 'ছবি লোড করা যায়নি' : 'Photo Could Not Be Loaded';
+    const friendlyMsg = isBengali
+      ? 'এই ছবিটি লোড করা সম্ভব হয়নি, কারণ এটি ক্লাউড স্টোরেজ (যেমন গুগল ফটোস) থেকে এখনও পুরোপুরি ফোনে সিঙ্ক হয়নি। কিছুক্ষণ পর আবার চেষ্টা করুন, গ্যালারি থেকে অন্য কোনো ছবি বেছে নিন, অথবা ছবি ছাড়াই সাবমিট করুন।'
+      : 'This photo couldn\'t be loaded, it may still be syncing from cloud storage. Try again in a moment, pick a different photo, or submit without an attachment.';
+
+    let diagnosticHtml = '';
+    if (diagnosticInfo) {
+      const stepTitle = diagnosticInfo.stepTitle || 'Reading file';
+      const errorCode = diagnosticInfo.errorCode || 'file-read-error';
+      const errorMessage = diagnosticInfo.errorMessage || 'FileReader failed to read image file';
+      const extraDetails = diagnosticInfo.extraDetails || '';
+      const fileSize = diagnosticInfo.fileSize || (file ? `${(file.size / 1024).toFixed(1)} KB` : null);
+      const fileType = diagnosticInfo.fileType || (file ? (file.type || 'unknown') : null);
+
+      diagnosticHtml = `
+        <div style="margin-top: 10px; border-top: 1px dashed #f59e0b; padding-top: 8px;">
+          <details style="cursor: pointer; font-size: 11px; color: #92400e;">
+            <summary style="font-weight: 600; outline: none; user-select: none;">${isBengali ? 'প্রযুক্তিগত বিস্তারিত তথ্য দেখুন (Technical Details)' : 'View Technical Details'}</summary>
+            <div style="margin-top: 6px; background: #fff5eb; border: 1px solid #fed7aa; border-radius: 6px; padding: 8px 10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; color: #b45309; word-break: break-word; line-height: 1.4;">
+              <div><strong>Failed Step:</strong> ${escapeHtml(stepTitle)}</div>
+              <div style="margin-top: 2px;"><strong>Error Code:</strong> <span style="background: #ffedd5; padding: 1px 4px; border-radius: 3px; font-weight: bold;">${escapeHtml(errorCode)}</span></div>
+              <div style="margin-top: 2px;"><strong>Error Message:</strong> ${escapeHtml(errorMessage)}</div>
+              ${fileSize ? `<div style="margin-top: 2px; color: #4b5563;"><strong>File Size:</strong> ${escapeHtml(fileSize)}</div>` : ''}
+              ${fileType ? `<div style="margin-top: 2px; color: #4b5563;"><strong>File Type:</strong> ${escapeHtml(fileType)}</div>` : ''}
+              ${extraDetails ? `<div style="margin-top: 2px; color: #4b5563;"><strong>Details:</strong> ${escapeHtml(extraDetails)}</div>` : ''}
+            </div>
+          </details>
+        </div>
+      `;
+    }
+
+    el.innerHTML = `
+      <div style="background: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 14px; text-align: left; line-height: 1.5;">
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <div style="font-size: 18px; color: #d97706; line-height: 1; margin-top: 2px;">☁️</div>
+          <div style="flex: 1;">
+            <div style="font-weight: 600; color: #92400e; font-size: 13px;">${escapeHtml(friendlyTitle)}</div>
+            <div style="margin-top: 4px; color: #78350f; font-size: 12px;">${escapeHtml(friendlyMsg)}</div>
+            ${diagnosticHtml}
+          </div>
+        </div>
+      </div>
+    `;
+    try {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (e) {}
+  }
+
+  function showClaimDiagnosticError(stepTitle, errorCode, errorMessage, extraDetails = '', fileSize = null, fileType = null, actualFormat = null) {
+    const el = document.getElementById('claimErrorContainer');
+    if (!el) return;
+    el.style.display = 'block';
+    el.innerHTML = `
+      <div style="background: #fff0f0; border: 1px solid #ffcdd2; border-radius: 8px; padding: 12px 14px; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: #b71c1c; word-break: break-word; line-height: 1.5;">
+        <div><strong>Failed Step:</strong> ${escapeHtml(stepTitle)}</div>
+        <div style="margin-top: 4px;"><strong>Error Code:</strong> <span style="background: #ffebee; padding: 1px 6px; border-radius: 4px; font-weight: bold;">${escapeHtml(errorCode || 'unknown')}</span></div>
+        <div style="margin-top: 4px;"><strong>Error Message:</strong> ${escapeHtml(errorMessage || 'No message')}</div>
+        ${fileSize ? `<div style="margin-top: 4px; color: #4b5563;"><strong>File Size:</strong> ${escapeHtml(fileSize)}</div>` : ''}
+        ${fileType ? `<div style="margin-top: 4px; color: #4b5563;"><strong>File Type:</strong> ${escapeHtml(fileType)}</div>` : ''}
+        ${actualFormat ? `<div style="margin-top: 4px; color: #4b5563;"><strong>Actual Format:</strong> ${escapeHtml(actualFormat)}</div>` : ''}
+        ${extraDetails ? `<div style="margin-top: 4px; color: #4b5563;"><strong>Details:</strong> ${escapeHtml(extraDetails)}</div>` : ''}
+      </div>
+    `;
+    try {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (e) {}
+  }
+
+  function showClaimIncompletePhotoWarning(file) {
+    const sizeKb = file && file.size !== undefined ? (file.size / 1024).toFixed(1) + ' KB' : '< 5 KB';
+    const fileType = file && file.type ? file.type : 'unknown';
+    const guidanceMsg = isBengali
+      ? 'এই ছবিটি অসম্পূর্ণ মনে হচ্ছে (যেমন ক্লাউড ব্যাকআপ ছবি যা এখনও ফোনে সম্পূর্ণ ডাউনলোড হয়নি)। ছবি পুরোপুরি ডাউনলোড হওয়া পর্যন্ত অপেক্ষা করুন অথবা অন্য কোনো স্ক্রিনশট নির্বাচন করুন।'
+      : 'This photo looks incomplete (e.g. a cloud-backed gallery photo that has not finished downloading on a slow connection). Please wait for the photo to fully download or choose a different screenshot.';
+    const detailsMsg = isBengali
+      ? 'ফাইলের সাইজ ৫KB-এর কম। ফোনের গ্যালারিতে ছবিটি সম্পূর্ণ লোড হতে দিন অথবা ক্যামেরা দিয়ে নতুন ছবি তুলুন।'
+      : 'File size is under 5KB. Cloud-backed photos must be fully downloaded to device storage before uploading.';
+
+    showClaimDiagnosticError('Reading file', 'FILE_INCOMPLETE', guidanceMsg, detailsMsg, sizeKb, fileType);
+  }
+
+  function setSubmissionStage(stageName) {
+    currentSubmissionStage = stageName;
+    console.log(`[Claim Submission] Stage: ${stageName}`);
+    updatePipelineStepper(stageName);
+    const submitBtn = document.getElementById('submitClaimBtn');
+    if (!submitBtn) return;
+
+    if (isBengali) {
+      switch (stageName) {
+        case 'Reading file':
+          submitBtn.textContent = 'ফাইল পড়া হচ্ছে...';
+          break;
+        case 'Compressing image':
+          submitBtn.textContent = 'ছবি সংকুচিত করা হচ্ছে...';
+          break;
+        case 'Encoding image':
+          submitBtn.textContent = 'ছবি এনকোড করা হচ্ছে...';
+          break;
+        case 'Checking size limit':
+          submitBtn.textContent = 'সাইজ যাচাই করা হচ্ছে...';
+          break;
+        case 'Uploading claim':
+          submitBtn.textContent = 'ক্লেইম আপলোড হচ্ছে...';
+          break;
+        default:
+          submitBtn.textContent = `${stageName}...`;
+      }
+    } else {
+      submitBtn.textContent = `${stageName}...`;
+    }
+  }
+
+  function updatePipelineStepper(stageName) {
+    const indicator = document.getElementById('claimStageIndicator');
+    if (!indicator) return;
+
+    // Update bilingual labels on the 5 dots
+    const lblRead = document.getElementById('lbl-read');
+    const lblCompress = document.getElementById('lbl-compress');
+    const lblEncode = document.getElementById('lbl-encode');
+    const lblCheck = document.getElementById('lbl-check');
+    const lblUpload = document.getElementById('lbl-upload');
+
+    if (lblRead) lblRead.textContent = isBengali ? 'রিড' : 'Read';
+    if (lblCompress) lblCompress.textContent = isBengali ? 'কমপ্রেস' : 'Compress';
+    if (lblEncode) lblEncode.textContent = isBengali ? 'এনকোড' : 'Encode';
+    if (lblCheck) lblCheck.textContent = isBengali ? 'সাইজ' : 'Check';
+    if (lblUpload) lblUpload.textContent = isBengali ? 'আপলোড' : 'Upload';
+
+    const stages = ['Reading file', 'Compressing image', 'Encoding image', 'Checking size limit', 'Uploading claim'];
+    const stepIds = ['step-read', 'step-compress', 'step-encode', 'step-check', 'step-upload'];
+    const connIds = ['conn-1', 'conn-2', 'conn-3', 'conn-4'];
+    const activeIndex = stages.indexOf(stageName);
+
+    if (activeIndex >= 0) {
+      indicator.style.display = 'block';
+      stepIds.forEach((id, idx) => {
+        const stepEl = document.getElementById(id);
+        if (!stepEl) return;
+        if (idx < activeIndex) {
+          stepEl.className = 'stage-step step-done';
+        } else if (idx === activeIndex) {
+          stepEl.className = 'stage-step step-active';
+        } else {
+          stepEl.className = 'stage-step step-pending';
+        }
+      });
+      connIds.forEach((id, idx) => {
+        const connEl = document.getElementById(id);
+        if (!connEl) return;
+        if (idx < activeIndex) {
+          connEl.className = 'step-connector connector-done';
+        } else {
+          connEl.className = 'step-connector';
+        }
+      });
+    } else {
+      indicator.style.display = 'none';
+      stepIds.forEach(id => {
+        const stepEl = document.getElementById(id);
+        if (stepEl) stepEl.className = 'stage-step step-pending';
+      });
+      connIds.forEach(id => {
+        const connEl = document.getElementById(id);
+        if (connEl) connEl.className = 'step-connector';
+      });
+    }
+  }
+
+  function detectFileSignature(file) {
+    return new Promise((resolve) => {
+      try {
+        if (!file || typeof file.slice !== 'function') {
+          return resolve('Unknown');
+        }
+        const slice = file.slice(0, 12);
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const buf = new Uint8Array(reader.result || []);
+            if (buf.length < 3) {
+              return resolve('Unknown (file too short)');
+            }
+            // JPEG (FF D8 FF)
+            if (buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) {
+              return resolve('JPEG (FF D8 FF)');
+            }
+            // PNG (89 50 4E 47)
+            if (buf.length >= 4 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) {
+              return resolve('PNG (89 50 4E 47)');
+            }
+            // GIF (GIF87a/GIF89a)
+            if (buf.length >= 6) {
+              const sig = String.fromCharCode(buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
+              if (sig === 'GIF87a' || sig === 'GIF89a') {
+                return resolve(`GIF (${sig})`);
+              }
+            }
+            // WebP (RIFF....WEBP)
+            if (buf.length >= 12) {
+              const riff = String.fromCharCode(buf[0], buf[1], buf[2], buf[3]);
+              const webp = String.fromCharCode(buf[8], buf[9], buf[10], buf[11]);
+              if (riff === 'RIFF' && webp === 'WEBP') {
+                return resolve('WebP (RIFF....WEBP)');
+              }
+            }
+            // HEIC/HEIF (ftyp box with heic/heif/mif1 brand)
+            if (buf.length >= 12) {
+              const boxType = String.fromCharCode(buf[4], buf[5], buf[6], buf[7]);
+              if (boxType === 'ftyp') {
+                const brand = String.fromCharCode(buf[8], buf[9], buf[10], buf[11]).trim();
+                return resolve(`HEIC/HEIF (ftyp ${brand})`);
+              }
+            }
+            const hex = Array.from(buf.slice(0, Math.min(buf.length, 8)))
+              .map(b => b.toString(16).padStart(2, '0').toUpperCase())
+              .join(' ');
+            return resolve(`Unknown (${hex})`);
+          } catch (e) {
+            resolve('Unknown');
+          }
+        };
+        reader.onerror = () => resolve('Unknown (read error)');
+        reader.readAsArrayBuffer(slice);
+      } catch (e) {
+        resolve('Unknown');
+      }
+    });
+  }
+
+  async function compressScreenshotWithTimeout(file, maxDimension = 1200, quality = 0.82) {
+    if (!file) return null;
+
+    const isImg = (file.type && file.type.startsWith('image/')) ||
+                  /\.(jpe?g|png|webp|bmp|gif|heic|heif)$/i.test(file.name || '');
+    if (!isImg) {
+      const typeErr = new Error(isBengali ? 'অনুগ্রহ করে একটি ছবি ফাইল নির্বাচন করুন।' : 'Please select a valid image file.');
+      typeErr.code = 'invalid-file-type';
+      typeErr.stage = 'Reading file';
+      typeErr.fileSize = (file.size / 1024).toFixed(1) + ' KB';
+      typeErr.fileType = file.type || 'unknown';
+      throw typeErr;
+    }
+
+    // Check if file is under 5KB before attempting any load or decode
+    if (file.size < 5 * 1024) {
+      showClaimIncompletePhotoWarning(file);
+      const incErr = new Error(isBengali 
+        ? 'এই ছবিটি অসম্পূর্ণ মনে হচ্ছে (যেমন ক্লাউড ব্যাকআপ ছবি যা এখনও ফোনে সম্পূর্ণ ডাউনলোড হয়নি)। ছবি পুরোপুরি ডাউনলোড হওয়া পর্যন্ত অপেক্ষা করুন অথবা অন্য কোনো স্ক্রিনশট নির্বাচন করুন।' 
+        : 'This photo looks incomplete (e.g. a cloud-backed gallery photo that has not finished downloading on a slow connection). Please wait for the photo to fully download or choose a different screenshot.');
+      incErr.code = 'FILE_INCOMPLETE';
+      incErr.stage = 'Reading file';
+      incErr.fileSize = (file.size / 1024).toFixed(1) + ' KB';
+      incErr.fileType = file.type || 'unknown';
+      incErr.details = 'Selected image file size is under 5KB.';
+      throw incErr;
+    }
+
+    setSubmissionStage("Reading file");
+
+    // 1. Detect actual file signature before attempting createImageBitmap
+    const actualFormat = await detectFileSignature(file);
+    console.log(`[Claim Submission] Detected actual format: ${actualFormat}, reported mime: ${file.type}`);
+
+    let createImageBitmapError = null;
+    let htmlImageError = null;
+    const methodsTried = [];
+
+    // Attempt 1: Fast path native createImageBitmap
+    if (typeof window.createImageBitmap === 'function') {
+      methodsTried.push('createImageBitmap');
+      try {
+        setSubmissionStage("Compressing image");
+        const bitmap = await window.createImageBitmap(file);
+        let width = bitmap.width;
+        let height = bitmap.height;
+
+        if (width > 0 && height > 0) {
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(bitmap, 0, 0, width, height);
+            setSubmissionStage("Encoding image");
+            const base64Data = canvas.toDataURL('image/jpeg', quality);
+            if (typeof bitmap.close === 'function') bitmap.close();
+            return base64Data;
+          }
+        }
+        if (typeof bitmap.close === 'function') bitmap.close();
+        throw new Error("Invalid bitmap dimensions (0x0) or canvas context unavailable");
+      } catch (bitmapErr) {
+        console.warn('[Claim Submission] createImageBitmap failed, attempting HTMLImageElement fallback:', bitmapErr);
+        createImageBitmapError = bitmapErr;
+      }
+    } else {
+      createImageBitmapError = new Error("createImageBitmap is not supported in this browser");
+    }
+
+    // Attempt 2: Fallback attempt using plain HTMLImageElement (new Image() + FileReader dataURL + canvas draw)
+    methodsTried.push('HTMLImageElement (FileReader dataURL)');
+    try {
+      setSubmissionStage("Reading file");
+      const fallbackBase64 = await new Promise(async (resolve, reject) => {
+        let timeoutId = setTimeout(() => {
+          const timeoutErr = new Error("Image processing timed out — try a smaller photo or submit without one.");
+          timeoutErr.code = "timeout";
+          timeoutErr.stage = currentSubmissionStage || "Compressing image";
+          timeoutErr.fileSize = (file.size / 1024).toFixed(1) + ' KB';
+          timeoutErr.fileType = file.type || 'unknown';
+          timeoutErr.actualFormat = actualFormat;
+          timeoutErr.details = "Browser was unable to process the selected photo within 12 seconds.";
+          reject(timeoutErr);
+        }, 12000);
+
+        // Read file with FileReader, with one automatic retry after 1.5s if FileReader read fails (e.g., cloud photo materializing)
+        const readWithFileReader = () => new Promise((res, rej) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              setSubmissionStage("Compressing image");
+              const dataUrl = reader.result;
+              const img = new Image();
+
+              img.onload = () => {
+                clearTimeout(timeoutId);
+                try {
+                  let width = img.naturalWidth || img.width;
+                  let height = img.naturalHeight || img.height;
+
+                  if (width <= 0 || height <= 0) {
+                    const dimErr = new Error("Invalid image dimensions (0x0).");
+                    dimErr.code = "invalid-dimensions";
+                    dimErr.stage = "Compressing image";
+                    dimErr.fileSize = (file.size / 1024).toFixed(1) + ' KB';
+                    dimErr.fileType = file.type || 'unknown';
+                    dimErr.actualFormat = actualFormat;
+                    return rej(dimErr);
+                  }
+
+                  if (width > maxDimension || height > maxDimension) {
+                    if (width > height) {
+                      height = Math.round((height * maxDimension) / width);
+                      width = maxDimension;
+                    } else {
+                      width = Math.round((width * maxDimension) / height);
+                      height = maxDimension;
+                    }
+                  }
+
+                  const canvas = document.createElement('canvas');
+                  canvas.width = width;
+                  canvas.height = height;
+                  const ctx = canvas.getContext('2d');
+                  if (!ctx) {
+                    const ctxErr = new Error("Canvas 2D context is not available.");
+                    ctxErr.code = "canvas-context-error";
+                    ctxErr.stage = "Compressing image";
+                    ctxErr.fileSize = (file.size / 1024).toFixed(1) + ' KB';
+                    ctxErr.fileType = file.type || 'unknown';
+                    ctxErr.actualFormat = actualFormat;
+                    return rej(ctxErr);
+                  }
+
+                  ctx.fillStyle = '#FFFFFF';
+                  ctx.fillRect(0, 0, width, height);
+                  ctx.drawImage(img, 0, 0, width, height);
+
+                  setSubmissionStage("Encoding image");
+                  const base64Data = canvas.toDataURL('image/jpeg', quality);
+                  res(base64Data);
+                } catch (drawErr) {
+                  drawErr.stage = "Compressing image";
+                  drawErr.fileSize = (file.size / 1024).toFixed(1) + ' KB';
+                  drawErr.fileType = file.type || 'unknown';
+                  drawErr.actualFormat = actualFormat;
+                  rej(drawErr);
+                }
+              };
+
+              img.onerror = () => {
+                clearTimeout(timeoutId);
+                const decodeErr = new Error("HTMLImageElement failed to decode dataURL source");
+                decodeErr.code = "html-image-decode-error";
+                rej(decodeErr);
+              };
+
+              img.src = dataUrl;
+            } catch (processErr) {
+              clearTimeout(timeoutId);
+              rej(processErr);
+            }
+          };
+
+          reader.onerror = () => {
+            clearTimeout(timeoutId);
+            const readErr = new Error("FileReader failed to read image file as dataURL");
+            readErr.code = "file-read-error";
+            rej(readErr);
+          };
+
+          reader.readAsDataURL(file);
+        });
+
+        try {
+          const resBase64 = await readWithFileReader();
+          resolve(resBase64);
+        } catch (initialReadErr) {
+          if (initialReadErr && initialReadErr.code === "file-read-error") {
+            console.warn('[Claim Submission] FileReader read failed on initial attempt. Waiting 1.5s to retry in case cloud file is materializing...', initialReadErr);
+            setSubmissionStage("Reading file");
+            await new Promise(r => setTimeout(r, 1500));
+            try {
+              console.log('[Claim Submission] Retrying FileReader read operation...');
+              const retryBase64 = await readWithFileReader();
+              resolve(retryBase64);
+            } catch (retryReadErr) {
+              console.warn('[Claim Submission] FileReader read retry also failed:', retryReadErr);
+              clearTimeout(timeoutId);
+              reject(retryReadErr);
+            }
+          } else {
+            clearTimeout(timeoutId);
+            reject(initialReadErr);
+          }
+        }
+      });
+
+      return fallbackBase64;
+    } catch (fallbackErr) {
+      console.warn('[Claim Submission] HTMLImageElement fallback failed:', fallbackErr);
+      htmlImageError = fallbackErr;
+    }
+
+    // If the failure was a raw file read error (FileReader failed even after retry), treat as cloud sync / raw read failure
+    if (htmlImageError && htmlImageError.code === "file-read-error") {
+      const syncErr = new Error(isBengali 
+        ? "এই ছবিটি লোড করা সম্ভব হয়নি, কারণ এটি ক্লাউড স্টোরেজ থেকে এখনও পুরোপুরি ফোনে সিঙ্ক হয়নি। কিছুক্ষণ পর আবার চেষ্টা করুন, অন্য কোনো ছবি বেছে নিন, অথবা ছবি ছাড়াই সাবমিট করুন।" 
+        : "This photo couldn't be loaded, it may still be syncing from cloud storage. Try again in a moment, pick a different photo, or submit without an attachment.");
+      syncErr.code = "file-read-error";
+      syncErr.stage = "Reading file";
+      syncErr.fileSize = (file.size / 1024).toFixed(1) + ' KB';
+      syncErr.fileType = file.type || 'unknown';
+      syncErr.actualFormat = actualFormat;
+      syncErr.details = `FileReader read failed after automatic retry. Raw size: ${(file.size / 1024).toFixed(1)} KB, type: ${file.type || 'unknown'}.`;
+      throw syncErr;
+    }
+
+    // Both approaches failed: only now show the final could not decode diagnostic error
+    const detailsList = [];
+    if (createImageBitmapError) {
+      const msg = createImageBitmapError.message || String(createImageBitmapError);
+      detailsList.push(`createImageBitmap: ${msg}`);
+    }
+    if (htmlImageError) {
+      const msg = htmlImageError.message || String(htmlImageError);
+      detailsList.push(`HTMLImageElement (FileReader dataURL): ${msg}`);
+    }
+
+    const decodeErr = new Error(isBengali ? "ব্রাউজার ছবির ফরম্যাট ডিকোড করতে পারেনি।" : "Browser could not decode the image file format.");
+    decodeErr.code = "image-decode-error";
+    decodeErr.stage = "Compressing image";
+    decodeErr.fileSize = (file.size / 1024).toFixed(1) + ' KB';
+    decodeErr.fileType = file.type || 'unknown';
+    decodeErr.actualFormat = actualFormat;
+    decodeErr.details = `Methods tried: [${methodsTried.join(', ')}]. ${detailsList.join(' | ')}`;
+    throw decodeErr;
+  }
+
+  if (screenshotInput) {
+    screenshotInput.addEventListener('change', (e) => {
+      hideClaimError();
+      const file = e.target.files && e.target.files[0];
+      if (file) {
+        if (!file.type.startsWith('image/')) {
+          showClaimDiagnosticError(
+            'File Selection',
+            'invalid-file-type',
+            isBengali ? 'অনুগ্রহ করে শুধুমাত্র ছবি ফাইল নির্বাচন করুন।' : 'Please select a valid image file.',
+            '',
+            (file.size / 1024).toFixed(1) + ' KB',
+            file.type || 'unknown'
+          );
+          screenshotInput.value = '';
+          currentScreenshotBase64 = null;
+          if (screenshotPreviewContainer) screenshotPreviewContainer.style.display = 'none';
+          return;
+        }
+        if (file.size > 15 * 1024 * 1024) {
+          showClaimDiagnosticError(
+            'File Selection',
+            'file-too-large',
+            isBengali ? 'ছবির সাইজ ১৫MB-এর কম হতে হবে।' : 'Original image size must be less than 15MB.',
+            '',
+            (file.size / 1024).toFixed(1) + ' KB',
+            file.type || 'unknown'
+          );
+          screenshotInput.value = '';
+          currentScreenshotBase64 = null;
+          if (screenshotPreviewContainer) screenshotPreviewContainer.style.display = 'none';
+          return;
+        }
+
+        // Before attempting to load/decode at all, check if under 5KB (likely incomplete / cloud photo)
+        if (file.size < 5 * 1024) {
+          showClaimIncompletePhotoWarning(file);
+          currentScreenshotBase64 = null;
+          if (screenshotPreviewContainer) screenshotPreviewContainer.style.display = 'none';
+          if (screenshotPreviewImg) screenshotPreviewImg.src = '';
+          return;
+        }
+
+        // Show instant local preview without blocking or freezing
+        try {
+          const previewUrl = URL.createObjectURL(file);
+          if (screenshotPreviewImg) screenshotPreviewImg.src = previewUrl;
+          if (screenshotPreviewContainer) screenshotPreviewContainer.style.display = 'block';
+        } catch (previewErr) {
+          console.warn('Preview creation error:', previewErr);
+        }
+        currentScreenshotBase64 = null; // Will be compressed on submit with staged logging & timeout
+      } else {
+        currentScreenshotBase64 = null;
+        if (screenshotPreviewContainer) screenshotPreviewContainer.style.display = 'none';
+        if (screenshotPreviewImg) screenshotPreviewImg.src = '';
+      }
+    });
+  }
+
+  if (removeScreenshotBtn) {
+    removeScreenshotBtn.addEventListener('click', () => {
+      if (screenshotInput) screenshotInput.value = '';
+      currentScreenshotBase64 = null;
+      if (screenshotPreviewContainer) screenshotPreviewContainer.style.display = 'none';
+      if (screenshotPreviewImg) screenshotPreviewImg.src = '';
+      hideClaimError();
+    });
+  }
+
+  function openClaimModal(defaultAmount) {
+    hideClaimError();
+    updatePipelineStepper(null);
+    const amountInput = document.getElementById('claimAmountInput');
+    const noteInput = document.getElementById('claimNoteInput');
+    if (amountInput) amountInput.value = defaultAmount.toFixed(2);
+    if (noteInput) noteInput.value = '';
+
+    currentScreenshotBase64 = null;
+    if (screenshotInput) screenshotInput.value = '';
+    if (screenshotPreviewContainer) screenshotPreviewContainer.style.display = 'none';
+    if (screenshotPreviewImg) screenshotPreviewImg.src = '';
+
+    const cancelBtn = document.getElementById('cancelClaimBtn');
+    const submitBtn = document.getElementById('submitClaimBtn');
+    if (cancelBtn) cancelBtn.disabled = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = isBengali ? 'পেমেন্ট ক্লেইম জমা দিন' : 'Submit Payment Claim';
+    }
+
+    // Quick chips
+    const chipsContainer = document.getElementById('quickAmountsContainer');
+    if (chipsContainer) {
+      chipsContainer.innerHTML = '';
+
+      const fullChip = document.createElement('div');
+      fullChip.className = 'quick-chip';
+      fullChip.textContent = `${isBengali ? 'পুরো বাকি' : 'Full'}: ₹${defaultAmount.toFixed(2)}`;
+      fullChip.onclick = () => { if (amountInput) amountInput.value = defaultAmount.toFixed(2); };
+      chipsContainer.appendChild(fullChip);
+
+      if (defaultAmount >= 200) {
+        const halfChip = document.createElement('div');
+        halfChip.className = 'quick-chip';
+        halfChip.textContent = `₹${Math.round(defaultAmount / 2)}`;
+        halfChip.onclick = () => { if (amountInput) amountInput.value = Math.round(defaultAmount / 2); };
+        chipsContainer.appendChild(halfChip);
+      }
+    }
+
+    claimModal.classList.add('active');
+  }
+
+  // 4. Handle Claim Form Submit
+  claimForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentCustomer) return;
+
+    hideClaimError();
+
+    const submitBtn = document.getElementById('submitClaimBtn');
+    const cancelBtn = document.getElementById('cancelClaimBtn');
+
+    try {
+      if (submitBtn) submitBtn.disabled = true;
+      if (cancelBtn) cancelBtn.disabled = true;
+
+      // Check duplicate
+      if (getPendingClaim()) {
+        const dupErr = new Error(isBengali ? 'একটি পেমেন্ট ক্লেইম ইতিমধ্যে প্রক্রিয়াধীন রয়েছে।' : 'A pending claim is already awaiting confirmation.');
+        dupErr.code = 'duplicate-claim';
+        dupErr.stage = 'Validation';
+        dupErr.details = 'Please wait for the shopkeeper to review the pending claim.';
+        throw dupErr;
+      }
+
+      const amountInput = document.getElementById('claimAmountInput');
+      const amount = parseFloat(amountInput ? amountInput.value : '');
+      const noteInput = document.getElementById('claimNoteInput');
+      const note = noteInput ? noteInput.value.trim() : '';
+
+      if (isNaN(amount) || amount <= 0) {
+        const valErr = new Error(isBengali ? 'সঠিক টাকার পরিমাণ দিন।' : 'Please enter a valid positive amount.');
+        valErr.code = 'invalid-amount';
+        valErr.stage = 'Validation';
+        valErr.details = 'Amount must be greater than 0.';
+        throw valErr;
+      }
+
+      const claimId = 'claim_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+
+      // Process screenshot if selected
+      const screenshotFile = screenshotInput && screenshotInput.files && screenshotInput.files[0];
+      let screenshotData = currentScreenshotBase64;
+
+      if (screenshotFile && !screenshotData) {
+        if (screenshotFile.size < 5 * 1024) {
+          showClaimIncompletePhotoWarning(screenshotFile);
+          const incErr = new Error(isBengali 
+            ? 'এই ছবিটি অসম্পূর্ণ মনে হচ্ছে (যেমন ক্লাউড ব্যাকআপ ছবি যা এখনও ফোনে সম্পূর্ণ ডাউনলোড হয়নি)। ছবি পুরোপুরি ডাউনলোড হওয়া পর্যন্ত অপেক্ষা করুন অথবা অন্য কোনো স্ক্রিনশট নির্বাচন করুন।' 
+            : 'This photo looks incomplete (e.g. a cloud-backed gallery photo that has not finished downloading on a slow connection). Please wait for the photo to fully download or choose a different screenshot.');
+          incErr.code = 'FILE_INCOMPLETE';
+          incErr.stage = 'Reading file';
+          incErr.fileSize = (screenshotFile.size / 1024).toFixed(1) + ' KB';
+          incErr.fileType = screenshotFile.type || 'unknown';
+          incErr.details = 'Selected image file size is under 5KB.';
+          throw incErr;
+        } else {
+          screenshotData = await compressScreenshotWithTimeout(screenshotFile, 1200, 0.82);
+          currentScreenshotBase64 = screenshotData;
+        }
+      }
+
+      // Checking size limit (~700KB cap check against screenshotData)
+      if (screenshotData) {
+        setSubmissionStage('Checking size limit');
+        const MAX_ALLOWED_BASE64_BYTES = 700 * 1024; // ~700KB
+        if (screenshotData.length > MAX_ALLOWED_BASE64_BYTES) {
+          const sizeKb = Math.round(screenshotData.length / 1024);
+          const sizeErr = new Error(isBengali 
+            ? `স্ক্রিনশটের সাইজ অনেক বড় (${sizeKb}KB > ৭০০KB limit)। অনুগ্রহ করে একটি ছোট বা কম রেজোলিউশনের ছবি দিন অথবা ছবি ছাড়া সাবমিট করুন।` 
+            : `Screenshot is too large (${sizeKb}KB > 700KB limit). Please choose a smaller or lower-resolution photo or submit without one.`);
+          sizeErr.code = 'size-cap-exceeded';
+          sizeErr.stage = 'Checking size limit';
+          sizeErr.details = `Base64 string is ${screenshotData.length} bytes (~${sizeKb}KB). Maximum allowed size is ${MAX_ALLOWED_BASE64_BYTES} bytes (~700KB).`;
+          throw sizeErr;
+        }
+      }
+
+      // Uploading claim (Firestore write to customers/{customerId}/payment_claims/{claimId})
+      setSubmissionStage('Uploading claim');
+
+      const claimData = {
+        id: claimId,
+        customerName: currentCustomer.name || 'Customer',
+        customerPhone: currentCustomer.phone || '',
+        shareToken: shareToken,
+        claimedAmount: amount,
+        dueBalanceAtClaim: calculateLiveBalance(),
+        timestamp: Date.now(),
+        status: 'pending',
+        note: note || null,
+        rejectionReason: null,
+        confirmedAt: null,
+        confirmedBy: null,
+        rejectedAt: null,
+        rejectedBy: null,
+        screenshotData: screenshotData || null
+      };
+
+      await db.collection('customers')
+        .doc(currentCustomer.id)
+        .collection('payment_claims')
+        .doc(claimId)
+        .set(claimData);
+
+      console.log(`[Claim Submission] Successfully uploaded claim: customers/${currentCustomer.id}/payment_claims/${claimId}`);
+
+      currentScreenshotBase64 = null;
+      if (screenshotInput) screenshotInput.value = '';
+      if (screenshotPreviewContainer) screenshotPreviewContainer.style.display = 'none';
+      if (screenshotPreviewImg) screenshotPreviewImg.src = '';
+
+      claimModal.classList.remove('active');
+      alert(isBengali 
+        ? 'পেমেন্ট রিপোর্ট সফল হয়েছে! দোকানদার যাচাই করে খাতা আপডেট করবেন।' 
+        : 'Payment reported successfully — the shopkeeper will confirm shortly.');
+    } catch (err) {
+      console.error('[Claim Submission] Error submitting payment claim:', err);
+      const failedStage = err.stage || currentSubmissionStage || 'Uploading claim';
+      const errorCode = err.code || (err.name || 'submission-error');
+      const errorMessage = err.message || (isBengali ? 'ক্লেইম জমা দেওয়া যায়নি।' : 'Failed to submit claim.');
+      const extraDetails = err.details || (err.stack ? String(err.stack).split('\n')[0] : '');
+      const fileSize = err.fileSize || (screenshotFile ? `${(screenshotFile.size / 1024).toFixed(1)} KB` : null);
+      const fileType = err.fileType || (screenshotFile ? (screenshotFile.type || 'unknown') : null);
+      const actualFormat = err.actualFormat || null;
+
+      if (errorCode === 'file-read-error') {
+        showClaimCloudSyncWarning(screenshotFile, {
+          stepTitle: failedStage,
+          errorCode: errorCode,
+          errorMessage: errorMessage,
+          extraDetails: extraDetails,
+          fileSize: fileSize,
+          fileType: fileType,
+          actualFormat: actualFormat
+        });
+      } else {
+        showClaimDiagnosticError(failedStage, errorCode, errorMessage, extraDetails, fileSize, fileType, actualFormat);
+      }
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = isBengali ? 'পেমেন্ট ক্লেইম জমা দিন' : 'Submit Payment Claim';
+      }
+      if (cancelBtn) {
+        cancelBtn.disabled = false;
+      }
+      currentSubmissionStage = null;
+      updatePipelineStepper(null);
+    }
+  });
+
+  function renderLedger() {
+    const listEl = document.getElementById('ledgerList');
+    const countEl = document.getElementById('entryCountText');
+    countEl.textContent = `${currentLedger.length} ${isBengali ? 'টি লেনদেন' : 'entries'}`;
+
+    if (currentLedger.length === 0) {
+      listEl.innerHTML = `<div class="empty-state">${isBengali ? 'কোনো লেনদেনের রেকর্ড পাওয়া যায়নি।' : 'No transaction records found.'}</div>`;
+      return;
+    }
+
+    listEl.innerHTML = currentLedger.map(entry => {
+      const typeStr = (entry.type || '').toUpperCase();
+      const isInterest = typeStr.includes('INTEREST');
+      const isDebit = typeStr === 'DEBIT' || typeStr === 'SALE_CREDIT' || isInterest || (entry.amount > 0 && typeStr !== 'CREDIT' && typeStr !== 'PAYMENT_RECEIVED');
+      const amtFormatted = Math.abs(entry.amount || 0).toFixed(2);
+      const dateStr = formatDate(entry.date || entry.timestamp || entry.datetime);
+      
+      let defaultDesc = isDebit ? (isBengali ? 'বাকি ক্রয় (Dr)' : 'Purchase on Credit') : (isBengali ? 'জমা / পেমেন্ট (Cr)' : 'Payment Received');
+      if (isInterest) {
+        defaultDesc = isBengali ? 'বিলম্ব সুদ / লেট ফি (Dr)' : 'Accrued Late Interest (Dr)';
+      }
+      const noteStr = entry.description || entry.notes || entry.note || defaultDesc;
+
+      const badgeHtml = isInterest
+        ? `<span style="font-size: 11px; font-weight: 700; color: #92400E; background: #FEF3C7; padding: 2px 7px; border-radius: 6px; border: 1px solid #FDE68A;">⚠️ ${isBengali ? 'দেরি সুদ' : 'Late Fee'}</span>`
+        : isDebit
+          ? `<span style="font-size: 11px; font-weight: 700; color: var(--primary); background: var(--primary-light); padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(139,30,63,0.18);">↑ ${isBengali ? 'বাকি ক্রয়' : 'Due (Dr)'}</span>`
+          : `<span style="font-size: 11px; font-weight: 700; color: var(--green-profit); background: var(--green-bg); padding: 2px 7px; border-radius: 6px; border: 1px solid rgba(46,125,50,0.18);">↓ ${isBengali ? 'পেমেন্ট জমা' : 'Paid (Cr)'}</span>`;
+
+      return `
+        <div class="ledger-item" style="${isInterest ? 'background: #FFFBEB; border-color: #FDE68A;' : ''}">
+          <div class="ledger-left">
+            <div class="ledger-desc" style="${isInterest ? 'color: #92400E;' : ''}">
+              ${badgeHtml}
+              <span>${escapeHtml(noteStr)}</span>
+            </div>
+            <div class="ledger-date">${dateStr}</div>
+          </div>
+          <div class="ledger-right">
+            <div class="ledger-amount ${isDebit ? 'debit' : 'credit'}">
+              ${isDebit ? '+' : '-'} ₹${amtFormatted}
+            </div>
+            ${entry.balanceAfter != null ? `<div class="ledger-balance">Bal: ₹${entry.balanceAfter.toFixed(2)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function formatDate(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function formatTimeAgo(ts) {
+    if (!ts) return '';
+    const elapsedSec = Math.floor((Date.now() - ts) / 1000);
+    if (elapsedSec < 60) return isBengali ? 'এইমাত্র' : 'just now';
+    const min = Math.floor(elapsedSec / 60);
+    if (min < 60) return isBengali ? `${min} মিনিট আগে` : `${min}m ago`;
+    const hours = Math.floor(min / 60);
+    if (hours < 24) return isBengali ? `${hours} ঘণ্টা আগে` : `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return isBengali ? `${days} দিন আগে` : `${days}d ago`;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+})();
+</script>
+</body>
+</html>

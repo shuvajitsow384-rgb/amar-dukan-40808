@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="shortcut_new_sale"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_sale"
+        android:shortcutShortLabel="@string/shortcut_new_sale_short"
+        android:shortcutLongLabel="@string/shortcut_new_sale_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.kalimata.store"
+            android:targetClass="com.example.MainActivity">
+            <extra
+                android:name="shortcut_action"
+                android:value="new_sale" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_add_expense"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_expense"
+        android:shortcutShortLabel="@string/shortcut_add_expense_short"
+        android:shortcutLongLabel="@string/shortcut_add_expense_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.kalimata.store"
+            android:targetClass="com.example.MainActivity">
+            <extra
+                android:name="shortcut_action"
+                android:value="add_expense" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_add_product"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_product"
+        android:shortcutShortLabel="@string/shortcut_add_product_short"
+        android:shortcutLongLabel="@string/shortcut_add_product_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.kalimata.store"
+            android:targetClass="com.example.MainActivity">
+            <extra
+                android:name="shortcut_action"
+                android:value="add_product" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_todays_report"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_report"
+        android:shortcutShortLabel="@string/shortcut_todays_report_short"
+        android:shortcutLongLabel="@string/shortcut_todays_report_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.kalimata.store"
+            android:targetClass="com.example.MainActivity">
+            <extra
+                android:name="shortcut_action"
+                android:value="todays_report" />
+        </intent>
+    </shortcut>
+</shortcuts>

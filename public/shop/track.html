@@ -1,0 +1,2402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Order Tracking | লাইভ অর্ডার ট্র্যাকিং</title>
+<!-- Firebase SDKs (compat for zero-bundle browser usage) -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<!-- Auto-init fallback when on Firebase Hosting -->
+<!-- <script src="/__/firebase/init.js" onerror="console.log('Using standard Firebase config')"></script> -->
+<!-- QRCodeJS for offline dynamic UPI QR rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+  :root {
+    --primary: #1E3A8A;
+    --primary-light: #EFF6FF;
+    --primary-dark: #172554;
+    --accent: #2563EB;
+    --accent-hover: #1D4ED8;
+    --green-success: #15803D;
+    --green-bg: #DCFCE7;
+    --green-border: #86EFAC;
+    --red-danger: #B91C1C;
+    --red-bg: #FEE2E2;
+    --red-border: #FCA5A5;
+    --amber-warning: #B45309;
+    --amber-bg: #FEF3C7;
+    --amber-border: #FCD34D;
+    --card-bg: #FFFFFF;
+    --bg-main: #F1F5F9;
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --text-muted: #94A3B8;
+    --border-color: #E2E8F0;
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.08);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    line-height: 1.5;
+    padding: 16px 12px 48px;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  /* Top Navigation & Language Bar */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding: 2px 4px;
+  }
+
+  .brand-badge {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .lang-btn {
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
+    color: var(--primary);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+  }
+  .lang-btn:active {
+    transform: scale(0.96);
+  }
+
+  /* Main Card */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  /* Header */
+  .order-header {
+    background: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+    color: #FFFFFF;
+    padding: 20px 20px 18px;
+    text-align: center;
+    position: relative;
+  }
+  .store-title {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    letter-spacing: 0.01em;
+  }
+  .order-num-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 6px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    user-select: all;
+  }
+  .order-num-tag:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  /* Status Banner */
+  .status-banner {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+    background: #FAFAFA;
+  }
+  .status-chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .status-chip.placed { background: var(--primary-light); color: var(--accent); border: 1px solid #BFDBFE; }
+  .status-chip.confirmed { background: #FEF9C3; color: #854D0E; border: 1px solid #FDE047; }
+  .status-chip.ready { background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE; }
+  .status-chip.out_for_delivery { background: #E0E7FF; color: #4338CA; border: 1px solid #C7D2FE; }
+  .status-chip.completed { background: var(--green-bg); color: var(--green-success); border: 1px solid var(--green-border); }
+  .status-chip.cancelled { background: var(--red-bg); color: var(--red-danger); border: 1px solid var(--red-border); }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    background: #22C55E;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    animation: livePulse 1.8s infinite;
+  }
+  @keyframes livePulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+  }
+
+  /* Stepper */
+  .stepper-container {
+    padding: 20px 18px 16px;
+    background: #FFFFFF;
+  }
+  .stepper {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 8px;
+  }
+  .stepper::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 24px;
+    right: 24px;
+    height: 3px;
+    background: #E2E8F0;
+    z-index: 1;
+  }
+  .stepper-progress {
+    position: absolute;
+    top: 16px;
+    left: 24px;
+    height: 3px;
+    background: var(--accent);
+    z-index: 1;
+    transition: width 0.4s ease;
+  }
+  .step {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    flex: 1;
+  }
+  .step-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    border: 2.5px solid #CBD5E1;
+    color: #64748B;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0 auto 6px;
+    transition: all 0.3s ease;
+  }
+  .step.completed .step-circle {
+    background: var(--green-success);
+    border-color: var(--green-success);
+    color: #FFFFFF;
+  }
+  .step.active .step-circle {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #FFFFFF;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2);
+  }
+  .step-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    line-height: 1.25;
+  }
+  .step.active .step-label {
+    color: var(--accent);
+    font-weight: 800;
+  }
+  .step.completed .step-label {
+    color: var(--green-success);
+    font-weight: 700;
+  }
+  .step-time {
+    font-size: 9.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* Cancellation Box */
+  .cancelled-box {
+    background: var(--red-bg);
+    border: 1px solid var(--red-border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    margin: 16px 18px;
+  }
+  .cancelled-title {
+    color: var(--red-danger);
+    font-weight: 800;
+    font-size: 14px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cancelled-reason {
+    color: #7F1D1D;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  /* Section Styles */
+  .section {
+    padding: 16px 18px;
+    border-top: 1px solid var(--border-color);
+  }
+  .section-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* Items Table / List */
+  .items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .item-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #E2E8F0;
+  }
+  .item-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .item-name {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .item-qty-rate {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+  .item-subtotal {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  /* Pricing Breakdown */
+  .pricing-card {
+    background: #F8FAFC;
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    margin-top: 12px;
+  }
+  .price-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .price-row.total {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-primary);
+    border-top: 1.5px solid #CBD5E1;
+    padding-top: 8px;
+    margin-top: 6px;
+    margin-bottom: 0;
+  }
+
+  /* Fulfillment Info */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    background: #F8FAFC;
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+  }
+  .info-item {
+    font-size: 12.5px;
+    display: flex;
+    gap: 8px;
+  }
+  .info-label {
+    font-weight: 700;
+    color: var(--text-secondary);
+    min-width: 90px;
+  }
+  .info-val {
+    color: var(--text-primary);
+    flex: 1;
+  }
+
+  /* UPI QR & Payment Block */
+  .payment-box {
+    background: #F8FAFC;
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    text-align: center;
+  }
+  .payment-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .payment-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+  }
+  .qr-wrapper {
+    display: inline-block;
+    padding: 12px;
+    background: #FFFFFF;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 12px;
+  }
+  #qrcode img, #qrcode canvas {
+    margin: 0 auto;
+    display: block;
+  }
+  .upi-id-pill {
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 6px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    max-width: 100%;
+    word-break: break-all;
+  }
+  .copy-btn {
+    background: var(--primary-light);
+    color: var(--accent);
+    border: 1px solid #BFDBFE;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .copy-btn.copied {
+    background: var(--green-bg);
+    color: var(--green-success);
+    border-color: var(--green-border);
+  }
+  .download-qr-btn {
+    background: #FFFFFF;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .download-qr-btn:hover {
+    background: #F1F5F9;
+  }
+
+  /* UTR Submission Form */
+  .utr-form {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed #CBD5E1;
+    text-align: left;
+  }
+  .utr-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .utr-input-group {
+    display: flex;
+    gap: 8px;
+  }
+  .utr-input {
+    flex: 1;
+    padding: 9px 12px;
+    font-size: 13px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 8px;
+    outline: none;
+    font-family: inherit;
+    text-transform: uppercase;
+  }
+  .utr-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+  .utr-submit-btn {
+    background: var(--accent);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.2s;
+  }
+  .utr-submit-btn:hover {
+    background: var(--accent-hover);
+  }
+  .utr-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .utr-status-box {
+    background: var(--amber-bg);
+    border: 1px solid var(--amber-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .utr-status-text {
+    color: var(--amber-warning);
+    font-weight: 600;
+  }
+
+  /* Cash Notice Box */
+  .cash-notice {
+    background: #F0FDF4;
+    border: 1.5px solid var(--green-border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .cash-icon {
+    font-size: 28px;
+  }
+  .cash-text-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--green-success);
+  }
+  .cash-text-sub {
+    font-size: 12px;
+    color: #166534;
+    margin-top: 2px;
+  }
+
+  /* Action Buttons */
+  .actions-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .action-btn:active {
+    transform: scale(0.97);
+  }
+  .action-btn.call {
+    background: #FFFFFF;
+    color: var(--text-primary);
+    border: 1.5px solid var(--border-color);
+  }
+  .action-btn.whatsapp {
+    background: #25D366;
+    color: #FFFFFF;
+  }
+
+  /* Loading & Error States */
+  .state-card {
+    background: #FFFFFF;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    padding: 40px 20px;
+    text-align: center;
+  }
+  .spinner {
+    width: 38px;
+    height: 38px;
+    border: 3.5px solid #E2E8F0;
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Footer Note */
+  .footer-meta {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 20px;
+    line-height: 1.4;
+  }
+
+  @media print {
+    body { background: white !important; color: black !important; padding: 0 !important; }
+    .top-bar, .status-banner, .stepper-container, .utr-form, .actions-row, .download-qr-btn, .copy-btn, .lang-btn, .footer-meta, #paymentProofErrorContainer { display: none !important; }
+    .card { box-shadow: none !important; border: 1px solid #ccc !important; max-width: 100% !important; margin: 0 !important; width: 100% !important; }
+    #customerReceiptSection { border: none !important; padding: 0 !important; background: transparent !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Top Navigation -->
+  <div class="top-bar">
+    <div class="brand-badge">
+      <span>🛍️</span>
+      <span id="topStoreName">Kali Mata Variety Store</span>
+    </div>
+    <button class="lang-btn" id="langToggleBtn" onclick="toggleLanguage()">
+      <span id="langFlag">বাংলা</span>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div id="loadingState" class="state-card">
+    <div class="spinner"></div>
+    <h3 style="font-size: 16px; margin-bottom: 6px;" data-en="Connecting to Live Order Tracker..." data-bn="লাইভ অর্ডার ট্র্যাকার সংযুক্ত হচ্ছে...">Connecting to Live Order Tracker...</h3>
+    <p style="font-size: 12.5px; color: var(--text-secondary);" data-en="Fetching realtime order status from store..." data-bn="দোকান থেকে রিয়েলটাইম অর্ডারের তথ্য সংগ্রহ করা হচ্ছে...">Fetching realtime order status from store...</p>
+  </div>
+
+  <!-- Error / Missing State -->
+  <div id="errorState" class="state-card" style="display: none;">
+    <div style="font-size: 42px; margin-bottom: 12px;" id="errorEmoji">⚠️</div>
+    <h3 style="font-size: 17px; margin-bottom: 6px; color: var(--text-primary);" id="errorTitle">Order Not Found</h3>
+    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 18px;" id="errorDesc">Please check the link provided by the store.</p>
+    <a href="tel:9609319228" id="errorCallBtn" class="action-btn call" style="display: inline-flex; width: auto; padding: 8px 18px;">
+      📞 <span data-en="Call Store Support" data-bn="দোকানে কল করুন">Call Store Support</span>
+    </a>
+  </div>
+
+  <!-- Main Order Content -->
+  <div id="orderContent" style="display: none;">
+    <div class="card">
+      <!-- Order Header -->
+      <div class="order-header">
+        <div class="store-title" id="headerStoreName">Kali Mata Variety Store</div>
+        <div style="font-size: 12px; opacity: 0.85;" data-en="Online Order Live Status" data-bn="অনলাইন অর্ডার লাইভ ট্র্যাকিং">Online Order Live Status</div>
+        <div>
+          <span class="order-num-tag" id="orderNumberBadge" title="Click to copy">
+            <span id="orderNumberText">ORD-000000</span>
+            <span style="font-size: 11px; opacity: 0.8;">📋</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Live Status Banner -->
+      <div class="status-banner">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="live-dot"></span>
+          <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary);" data-en="Live Status:" data-bn="বর্তমান অবস্থা:">Live Status:</span>
+        </div>
+        <div id="statusChipContainer">
+          <span class="status-chip placed" id="statusChip">Placed</span>
+        </div>
+      </div>
+
+      <!-- Live Stepper for Active Orders -->
+      <div id="stepperSection" class="stepper-container">
+        <div class="stepper">
+          <div class="stepper-progress" id="stepperProgress" style="width: 0%;"></div>
+          
+          <div class="step" id="stepPlaced">
+            <div class="step-circle" id="circlePlaced">1</div>
+            <div class="step-label" data-en="Placed" data-bn="গৃহীত">Placed</div>
+            <div class="step-time" id="timePlaced">--:--</div>
+          </div>
+
+          <div class="step" id="stepConfirmed">
+            <div class="step-circle" id="circleConfirmed">2</div>
+            <div class="step-label" data-en="Confirmed" data-bn="নিশ্চিত">Confirmed</div>
+            <div class="step-time" id="timeConfirmed">--:--</div>
+          </div>
+
+          <div class="step" id="stepReady">
+            <div class="step-circle" id="circleReady">3</div>
+            <div class="step-label" id="stepReadyLabel" data-en="Ready" data-bn="প্রস্তুত">Ready</div>
+            <div class="step-time" id="timeReady">--:--</div>
+          </div>
+
+          <div class="step" id="stepCompleted">
+            <div class="step-circle" id="circleCompleted">4</div>
+            <div class="step-label" data-en="Completed" data-bn="সম্পন্ন">Completed</div>
+            <div class="step-time" id="timeCompleted">--:--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cancelled Box (Shown only if CANCELLED) -->
+      <div id="cancelledBox" class="cancelled-box" style="display: none;">
+        <div class="cancelled-title">
+          <span>❌</span>
+          <span data-en="Order Cancelled" data-bn="অর্ডার বাতিল করা হয়েছে">Order Cancelled</span>
+        </div>
+        <div class="cancelled-reason" id="cancelledReasonText">
+          This order was cancelled by the store.
+        </div>
+      </div>
+
+      <!-- Payment Section -->
+      <div class="section" id="paymentSection">
+        <div class="section-title">
+          <span data-en="Payment Details" data-bn="পেমেন্ট বিবরণ">Payment Details</span>
+          <span id="paymentStatusBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 700;"></span>
+        </div>
+
+        <!-- Inline UPI QR Block (If UPI and PENDING) -->
+        <div id="upiPaymentBlock" class="payment-box" style="display: none;">
+          <div class="payment-title" data-en="Scan & Pay via Any UPI App" data-bn="যেকোনো UPI অ্যাপ দিয়ে স্ক্যান করে পে করুন">Scan & Pay via Any UPI App</div>
+          <div class="payment-sub" data-en="GPay, PhonePe, Paytm, BHIM or Mobile Banking" data-bn="Google Pay, PhonePe, Paytm বা যেকোনো UPI">GPay, PhonePe, Paytm, BHIM or Mobile Banking</div>
+
+          <div class="qr-wrapper">
+            <div id="qrcode"></div>
+          </div>
+
+          <div>
+            <div class="upi-id-pill">
+              <span style="font-weight: 700; color: var(--text-secondary);">UPI:</span>
+              <span id="upiIdDisplay" style="font-weight: 600;">--</span>
+              <button class="copy-btn" id="copyUpiBtn" onclick="copyUpiId()">Copy</button>
+            </div>
+          </div>
+
+          <button class="download-qr-btn" id="downloadQrBtn" onclick="downloadPaddedQr()">
+            <span>⬇️</span>
+            <span data-en="Save QR to Device" data-bn="QR কোড সেভ করুন">Save QR to Device</span>
+          </button>
+
+          <!-- UTR & Payment Proof Submission Box -->
+          <div class="utr-form">
+            <label class="utr-label" for="utrInput">
+              <span data-en="Paid? Enter 12-Digit UPI Ref / UTR:" data-bn="পেমেন্ট করেছেন? ১২ ডিজিটের UTR নম্বর লিখুন:">Paid? Enter 12-Digit UPI Ref / UTR:</span>
+            </label>
+            <div class="utr-input-group">
+              <input type="text" id="utrInput" class="utr-input" placeholder="e.g. 423456789012" maxlength="30">
+              <button class="utr-submit-btn" id="submitUtrBtn" onclick="submitPaymentProof()">
+                <span data-en="Submit" data-bn="জমা দিন">Submit</span>
+              </button>
+            </div>
+
+            <!-- Optional Payment Screenshot File Input -->
+            <div style="margin-top: 10px;">
+              <label class="utr-label" for="paymentScreenshotInput" style="margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                <span>
+                  <span data-en="📷 Upload Payment Screenshot (Optional):" data-bn="📷 পেমেন্ট স্ক্রিনশট আপলোড (ঐচ্ছিক):">📷 Upload Payment Screenshot (Optional):</span>
+                </span>
+                <span style="font-size: 10px; color: #64748B;" data-en="Auto-compressed (max 800px)" data-bn="অটো-কমপ্রেসড (সর্বোচ্চ ৮০০px)">Auto-compressed (max 800px)</span>
+              </label>
+              <input type="file" id="paymentScreenshotInput" accept="image/*" style="font-size: 12px; width: 100%; padding: 7px; border: 1.5px dashed var(--border-color); border-radius: 8px; background: #F8FAFC; cursor: pointer; color: var(--text-muted);" onchange="handleScreenshotSelected(event)">
+
+              <!-- Selected Screenshot Preview Pill -->
+              <div id="paymentScreenshotPreviewContainer" style="display: none; margin-top: 8px; align-items: center; gap: 8px; background: #F1F5F9; border: 1px solid #CBD5E1; padding: 6px 10px; border-radius: 6px;">
+                <img id="paymentScreenshotPreviewImg" src="" alt="Selected Preview" style="width: 42px; height: 42px; object-fit: cover; border-radius: 4px; border: 1px solid #94A3B8; cursor: pointer;" onclick="openFullscreenScreenshot(this.src)">
+                <div style="flex: 1; min-width: 0;">
+                  <div id="paymentScreenshotFileName" style="font-size: 11px; font-weight: 600; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+                  <div id="paymentScreenshotFileSize" style="font-size: 10px; color: #64748B;"></div>
+                </div>
+                <button type="button" onclick="clearSelectedScreenshot()" style="background: none; border: none; font-size: 16px; cursor: pointer; color: #EF4444; padding: 4px; line-height: 1;" title="Remove screenshot">✕</button>
+              </div>
+            </div>
+
+            <!-- On-Screen Diagnostic Error Container -->
+            <div id="paymentProofErrorContainer" style="display: none; margin-top: 10px;"></div>
+
+            <!-- Submitted Notice -->
+            <div id="utrSubmittedNotice" class="utr-status-box" style="display: none; margin-top: 10px;">
+              <div style="flex: 1; min-width: 0;">
+                <div class="utr-status-text" data-en="✓ Proof Submitted" data-bn="✓ পেমেন্ট প্রমাণ জমা দেওয়া হয়েছে">✓ Proof Submitted</div>
+                <div style="font-size: 11px; color: #78350F; margin-top: 3px;" id="utrSubmittedVal">UTR: --</div>
+              </div>
+              <span style="font-size: 10px; background: #FFFFFF; padding: 2px 6px; border-radius: 4px; font-weight: 700; color: var(--amber-warning); white-space: nowrap;" data-en="Awaiting Verification" data-bn="যাচাই অপেক্ষমান">Awaiting Verification</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cash Payment Notice (If CASH) -->
+        <div id="cashPaymentBlock" class="cash-notice" style="display: none;">
+          <div class="cash-icon">💵</div>
+          <div>
+            <div class="cash-text-title" data-en="Cash Payment" data-bn="নগদ মূল্য পরিশোধ">Cash Payment</div>
+            <div class="cash-text-sub" id="cashNoticeSub" data-en="Please pay in cash upon pickup or delivery." data-bn="দোকান থেকে পিকআপ বা ডেলিভারির সময় নগদে মূল্য পরিশোধ করুন।">
+              Please pay in cash upon pickup or delivery.
+            </div>
+          </div>
+        </div>
+
+        <!-- Khata / Credit Payment Notice (If CREDIT) -->
+        <div id="creditPaymentBlock" class="cash-notice" style="display: none; background: #FAF5FF; border-color: #E9D5FF;">
+          <div class="cash-icon">📒</div>
+          <div>
+            <div class="cash-text-title" style="color: #6B21A8;" data-en="Billed to Khata (Credit Sale)" data-bn="খাতায় বাকি বিক্রি হিসেবে যুক্ত">Billed to Khata (Credit Sale)</div>
+            <div class="cash-text-sub" style="color: #7E22CE;" id="creditNoticeSub" data-en="This order has been billed to your Khata ledger balance." data-bn="এই অর্ডারের মোট মূল্য আপনার বাকি খাতার ব্যালেন্সে যুক্ত করা হয়েছে।">
+              This order has been billed to your Khata ledger balance.
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Store Payment Assignment Notice (If no payment method chosen yet) -->
+        <div id="pendingPaymentBlock" class="cash-notice" style="display: none; background: #FFFBEB; border-color: #FDE68A;">
+          <div class="cash-icon">⏳</div>
+          <div>
+            <div class="cash-text-title" style="color: #92400E;" data-en="Payment Method To Be Decided by Store" data-bn="পেমেন্ট পদ্ধতি নির্ধারণ অপেক্ষমান">Payment Method To Be Decided by Store</div>
+            <div class="cash-text-sub" style="color: #B45309;" id="pendingPaymentSub" data-en="The store will choose payment collection (UPI QR, Cash, or Khata credit) when fulfilling your order." data-bn="দোকানদার অর্ডার প্রসেস করার সময় পেমেন্ট পদ্ধতি (UPI QR, নগদ, বা বাকি খাতা) নির্ধারণ করবেন।">
+              The store will choose payment collection (UPI QR, Cash, or Khata credit) when fulfilling your order.
+            </div>
+          </div>
+        </div>
+
+        <!-- Paid Confirmation Notice (If PAID) -->
+        <div id="paidSuccessBlock" class="cash-notice" style="display: none; background: #F0FDF4; border-color: var(--green-border);">
+          <div class="cash-icon">✅</div>
+          <div>
+            <div class="cash-text-title" data-en="Payment Confirmed" data-bn="পেমেন্ট সম্পন্ন হয়েছে">Payment Confirmed</div>
+            <div class="cash-text-sub" id="paidSuccessSub" data-en="Payment received and verified by store." data-bn="দোকান কর্তৃক পেমেন্ট যাচাই ও নিশ্চিত করা হয়েছে।">
+              Payment received and verified by store.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items List -->
+      <div class="section">
+        <div class="section-title">
+          <span data-en="Ordered Items" data-bn="অর্ডার করা পণ্য">Ordered Items</span>
+          <span id="itemsCountBadge" style="font-size: 11.5px; font-weight: 700; color: var(--accent); background: var(--primary-light); padding: 2px 8px; border-radius: 10px;">0 items</span>
+        </div>
+        <div class="items-list" id="itemsContainer">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Price Breakdown -->
+        <div class="pricing-card">
+          <div class="price-row">
+            <span data-en="Items Subtotal" data-bn="পণ্যসমূহের মূল্য">Items Subtotal</span>
+            <span id="subtotalAmount">₹0.00</span>
+          </div>
+          <div class="price-row" id="deliveryFeeRow" style="display: none;">
+            <span data-en="Delivery Fee" data-bn="ডেলিভারি ফি">Delivery Fee</span>
+            <span id="deliveryFeeAmount" style="color: var(--primary);">₹0.00</span>
+          </div>
+          <div class="price-row total">
+            <span data-en="Total Amount" data-bn="সর্বমোট প্রদেয়">Total Amount</span>
+            <span id="totalAmount" style="color: var(--primary);">₹0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fulfillment & Customer Details -->
+      <div class="section">
+        <div class="section-title">
+          <span data-en="Fulfillment & Customer" data-bn="ডেলিভারি ও গ্রাহক তথ্য">Fulfillment & Customer</span>
+          <span id="fulfillmentTypeBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 700;">PICKUP</span>
+        </div>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label" data-en="Customer:" data-bn="গ্রাহকের নাম:">Customer:</span>
+            <span class="info-val" id="custNameText">--</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label" data-en="Phone:" data-bn="ফোন নম্বর:">Phone:</span>
+            <span class="info-val" id="custPhoneText">--</span>
+          </div>
+          <div class="info-item" id="deliverySlotRow" style="display: none;">
+            <span class="info-label" data-en="Delivery Slot:" data-bn="ডেলিভারি সময়:">Delivery Slot:</span>
+            <span class="info-val" id="deliverySlotText" style="font-weight: 700; color: #0369A1;">--</span>
+          </div>
+          <div class="info-item" id="deliveryAddressRow" style="display: none;">
+            <span class="info-label" data-en="Address:" data-bn="ঠিকানা:">Address:</span>
+            <span class="info-val" id="deliveryAddressText">--</span>
+          </div>
+          <div class="info-item" id="deliveryMapLinkRow" style="display: none; align-items: center;">
+            <span class="info-label" data-en="Map Location:" data-bn="ম্যাপ লোকেশন:">Map Location:</span>
+            <span class="info-val">
+              <a href="#" id="deliveryMapLink" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 5px; background: #E0F2FE; color: #0369A1; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; text-decoration: none; border: 1px solid #BAE6FD;">
+                <span>📍</span>
+                <span id="deliveryMapLinkText" data-en="Open in Google Maps (Directions)" data-bn="গুগল ম্যাপে দিকনির্দেশনা দেখুন">Open in Google Maps (Directions)</span>
+              </a>
+            </span>
+          </div>
+          <div class="info-item" id="customerNotesRow" style="display: none;">
+            <span class="info-label" data-en="Notes:" data-bn="বিশেষ নির্দেশ:">Notes:</span>
+            <span class="info-val" id="customerNotesText">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer-Facing Official Bill Receipt Section -->
+      <div class="section" id="customerReceiptSection" style="background: #F8FAFC; border-top: 1.5px dashed var(--border-color); padding: 14px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <div>
+            <div style="font-size: 13px; font-weight: 800; color: #0F172A; text-transform: uppercase; letter-spacing: 0.5px;" data-en="🧾 Order Bill & Receipt" data-bn="🧾 অর্ডার বিল ও রসিদ">🧾 Order Bill & Receipt</div>
+            <div style="font-size: 11px; color: var(--text-secondary);" id="receiptStatusNote" data-en="Reflecting store-assigned payment method" data-bn="দোকানদার কর্তৃক নির্ধারিত পেমেন্ট পদ্ধতি প্রতিফলিত">Reflecting store-assigned payment method</div>
+          </div>
+          <button type="button" id="printReceiptBtn" onclick="printCustomerReceipt()" class="action-btn" style="width: auto; padding: 6px 14px; font-size: 11.5px; background: #0F172A; color: white; border-radius: 8px; font-weight: 700; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+            <span>🖨️</span>
+            <span data-en="Print / Save" data-bn="প্রিন্ট / সেভ">Print / Save</span>
+          </button>
+        </div>
+
+        <div id="receiptVoucherBody" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 10px; padding: 14px; font-size: 12px; color: #1E293B;">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Contact Store Actions -->
+      <div class="section" style="padding-top: 14px; background: #FAFAFA;">
+        <div class="actions-row">
+          <a href="tel:9609319228" id="callStoreLink" class="action-btn call">
+            <span>📞</span>
+            <span data-en="Call Store" data-bn="দোকানে কল করুন">Call Store</span>
+          </a>
+          <a href="#" id="whatsappStoreLink" target="_blank" class="action-btn whatsapp">
+            <span>💬</span>
+            <span data-en="WhatsApp Store" data-bn="হোয়াটসঅ্যাপ করুন">WhatsApp Store</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-meta">
+      <span data-en="Live order tracking provided by Kali Mata Variety Store • Amar Dukan" data-bn="কালী মাতা ভ্যারাইটি স্টোর • লাইভ অনলাইন অর্ডার ট্র্যাকিং">Live order tracking provided by Kali Mata Variety Store • Amar Dukan</span>
+    </div>
+  </div>
+</div>
+
+<!-- Fullscreen Screenshot Viewer Modal -->
+<div id="screenshotModal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88); z-index: 9999; align-items: center; justify-content: center; padding: 16px;" onclick="closeScreenshotModal()">
+  <div style="position: relative; max-width: 92vw; max-height: 90vh; display: flex; flex-direction: column; align-items: center;" onclick="event.stopPropagation()">
+    <button type="button" onclick="closeScreenshotModal()" style="position: absolute; top: -40px; right: 0; background: none; border: none; color: white; font-size: 28px; cursor: pointer; padding: 4px; line-height: 1;" title="Close">✕</button>
+    <img id="screenshotModalImg" src="" alt="Payment Screenshot" style="max-width: 100%; max-height: 82vh; border-radius: 8px; object-fit: contain; box-shadow: 0 12px 30px rgba(0,0,0,0.6);">
+  </div>
+</div>
+
+<script>
+  // 1. App State & Configurations
+  let currentLang = localStorage.getItem('track_lang') || 'en';
+  let currentOrder = null;
+  let unsubscribeOrderListener = null;
+  let qrRenderedForAmount = null;
+
+  let storeProfile = {
+    storeName: "Kali Mata Variety Store",
+    phone: "9609319228",
+    upiVpa: "9609319228-1@okbizaxis",
+    payeeName: "SHUVAJITSOW"
+  };
+
+  const primaryFirebaseConfig = {
+    apiKey: "AIzaSyAgRMYISbgrFm7R6yz8EhdnDidOiriZVRQ",
+    authDomain: "amar-dukan-40808.firebaseapp.com",
+    projectId: "amar-dukan-40808",
+    storageBucket: "amar-dukan-40808.firebasestorage.app",
+    messagingSenderId: "645499359222",
+    appId: "1:645499359222:web:47298abf2f843d63fa01d7"
+  };
+
+  let db = null;
+  try {
+    if (!firebase.apps.length) {
+      firebase.initializeApp(primaryFirebaseConfig);
+    }
+    db = firebase.firestore();
+  } catch (err) {
+    console.error("Firebase init failed:", err);
+  }
+
+  // 2. Bilingual Text Strings Dictionary
+  const i18n = {
+    en: {
+      flag: 'বাংলা',
+      placed: 'Placed',
+      confirmed: 'Confirmed',
+      ready: 'Ready for Pickup',
+      out_for_delivery: 'Out for Delivery',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+      pickup: 'Store Pickup',
+      delivery: 'Home Delivery',
+      pending: 'Payment Pending',
+      paid: 'Paid',
+      cod: 'Cash on Delivery',
+      items: 'items',
+      copied: 'Copied!'
+    },
+    bn: {
+      flag: 'English',
+      placed: 'অর্ডার গৃহীত',
+      confirmed: 'অর্ডার নিশ্চিত',
+      ready: 'পিকআপের জন্য প্রস্তুত',
+      out_for_delivery: 'ডেলিভারির জন্য পাঠানো হয়েছে',
+      completed: 'অর্ডার সম্পন্ন',
+      cancelled: 'অর্ডার বাতিল',
+      pickup: 'দোকান থেকে পিকআপ',
+      delivery: 'হোম ডেলিভারি',
+      pending: 'পেমেন্ট বাকি',
+      paid: 'পরিশোধিত',
+      cod: 'ক্যাশ অন ডেলিভারি',
+      items: 'টি পণ্য',
+      copied: 'কপি হয়েছে!'
+    }
+  };
+
+  function toggleLanguage() {
+    currentLang = currentLang === 'en' ? 'bn' : 'en';
+    localStorage.setItem('track_lang', currentLang);
+    applyLanguage();
+  }
+
+  function applyLanguage() {
+    document.getElementById('langFlag').textContent = i18n[currentLang].flag;
+    document.querySelectorAll('[data-en]').forEach(el => {
+      const text = el.getAttribute('data-' + currentLang);
+      if (text) el.textContent = text;
+    });
+    if (currentOrder) {
+      renderOrder(currentOrder);
+    }
+  }
+
+  // 3. Extract Order ID & Open Live Snapshot
+  function initTracker() {
+    applyLanguage();
+
+    const params = new URLSearchParams(window.location.search);
+    const orderId = (params.get('id') || params.get('orderId') || '').trim();
+
+    if (!orderId) {
+      showError(
+        currentLang === 'bn' ? 'অর্ডার লিঙ্ক অসম্পূর্ণ' : 'Missing Order Reference',
+        currentLang === 'bn' 
+          ? 'লিংকে কোনো অর্ডার আইডি পাওয়া যায়নি। অনুগ্রহ করে আপনার পাঠানো সঠিক ট্র্যাকিং লিংকটি ব্যবহার করুন।' 
+          : 'No Order ID found in tracking link. Please open the exact link sent to your SMS or WhatsApp.'
+      );
+      return;
+    }
+
+    if (!db) {
+      showError(
+        'Connection Error',
+        'Could not connect to database. Please refresh or try again later.'
+      );
+      return;
+    }
+
+    // First fetch store settings for up-to-date UPI & phone
+    fetchStoreProfile();
+
+    // Subscribe to realtime orders/{orderId}
+    const orderRef = db.collection('orders').doc(orderId);
+    unsubscribeOrderListener = orderRef.onSnapshot((doc) => {
+      document.getElementById('loadingState').style.display = 'none';
+      if (!doc.exists) {
+        showError(
+          currentLang === 'bn' ? 'অর্ডার পাওয়া যায়নি' : 'Order Not Found',
+          currentLang === 'bn'
+            ? 'এই অর্ডার আইডি সংক্রান্ত কোনো অর্ডার খুঁজে পাওয়া যায়নি। অনুগ্রহ করে দোকানদারের সাথে যোগাযোগ করুন।'
+            : 'Could not find any order for this tracking link. Please verify with the store.'
+        );
+        return;
+      }
+      const data = doc.data();
+      data.id = doc.id;
+      currentOrder = data;
+      document.getElementById('errorState').style.display = 'none';
+      document.getElementById('orderContent').style.display = 'block';
+      renderOrder(currentOrder);
+    }, (error) => {
+      console.error("Orders listener error:", error);
+      document.getElementById('loadingState').style.display = 'none';
+      showError(
+        'Realtime Sync Error',
+        error.message || 'Error listening to order status updates.'
+      );
+    });
+  }
+
+  async function fetchStoreProfile() {
+    try {
+      const doc = await db.collection('store_settings').doc('main_store_profile').get();
+      if (doc.exists) {
+        const d = doc.data();
+        if (d.storeName || d.name) storeProfile.storeName = d.storeName || d.name;
+        if (d.phone || d.storePhone) storeProfile.phone = d.phone || d.storePhone;
+        if (d.upiVpa || d.merchantUpiId) storeProfile.upiVpa = d.upiVpa || d.merchantUpiId;
+        if (d.merchantPayeeName || d.payeeName) storeProfile.payeeName = d.merchantPayeeName || d.payeeName;
+      }
+    } catch (e) {
+      console.warn("Using fallback store profile settings", e);
+    }
+    updateStoreUI();
+  }
+
+  function updateStoreUI() {
+    document.getElementById('topStoreName').textContent = storeProfile.storeName;
+    document.getElementById('headerStoreName').textContent = storeProfile.storeName;
+    document.getElementById('callStoreLink').href = `tel:${storeProfile.phone}`;
+    document.getElementById('errorCallBtn').href = `tel:${storeProfile.phone}`;
+    updateWhatsAppLink();
+  }
+
+  function updateWhatsAppLink() {
+    if (!currentOrder) return;
+    const orderNum = currentOrder.orderNumber || currentOrder.id;
+    const trackUrl = window.location.href;
+    const msg = currentLang === 'bn'
+      ? `নমস্কার, আমার অর্ডার নং *${orderNum}* সম্পর্কিত তথ্য জানতে চাই। ট্র্যাকিং লিংক: ${trackUrl}`
+      : `Hello, I am checking status for my order *${orderNum}*. Tracking link: ${trackUrl}`;
+    document.getElementById('whatsappStoreLink').href = `https://wa.me/91${storeProfile.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`;
+  }
+
+  function showError(title, desc) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('orderContent').style.display = 'none';
+    document.getElementById('errorState').style.display = 'block';
+    document.getElementById('errorTitle').textContent = title;
+    document.getElementById('errorDesc').textContent = desc;
+  }
+
+  // 4. Render Live Order Details
+  function renderOrder(order) {
+    const isBn = currentLang === 'bn';
+    const dict = i18n[currentLang];
+
+    // Order Number
+    const orderNum = order.orderNumber || `ORD-${order.id.slice(-6).toUpperCase()}`;
+    document.getElementById('orderNumberText').textContent = orderNum;
+    updateWhatsAppLink();
+
+    // Copy order number click handler
+    document.getElementById('orderNumberBadge').onclick = () => {
+      copyToClipboard(orderNum, () => {
+        alert(isBn ? 'অর্ডার নম্বর কপি করা হয়েছে!' : 'Order number copied to clipboard!');
+      });
+    };
+
+    // Status Banner & Chip
+    const rawStatus = (order.status || 'PLACED').toString().trim().toUpperCase();
+    let status = rawStatus;
+    if (status === 'PENDING' || status === 'NEW') status = 'PLACED';
+    if (status === 'ACCEPTED') status = 'CONFIRMED';
+    if (status === 'DISPATCHED') status = 'READY';
+    if (status === 'DELIVERED' || status === 'FULFILLED') status = 'COMPLETED';
+
+    const statusChip = document.getElementById('statusChip');
+    const statusSafe = String(status || '').toLowerCase();
+    statusChip.className = `status-chip ${statusSafe}`;
+    
+    let statusLabel = dict[statusSafe] || status;
+    if (status === 'READY' && order.fulfillmentType === 'DELIVERY') {
+      statusLabel = dict.out_for_delivery;
+    }
+    statusChip.textContent = statusLabel;
+
+    // Stepper vs Cancelled
+    const isCancelled = status === 'CANCELLED';
+    document.getElementById('cancelledBox').style.display = isCancelled ? 'block' : 'none';
+    document.getElementById('stepperSection').style.display = isCancelled ? 'none' : 'block';
+
+    if (isCancelled) {
+      const reason = order.cancelReason || (isBn ? 'দোকানদার কর্তৃক বাতিল করা হয়েছে।' : 'Order was cancelled by store.');
+      document.getElementById('cancelledReasonText').textContent = reason;
+    } else {
+      updateStepper(status, order);
+    }
+
+    // Payment Section
+    renderPaymentSection(order);
+
+    // Items List
+    renderItemsList(order);
+
+    // Fulfillment & Customer Info
+    renderCustomerFulfillment(order);
+
+    // Customer-Facing Official Bill Receipt
+    renderCustomerReceipt(order);
+  }
+
+  function updateStepper(status, order) {
+    const steps = ['stepPlaced', 'stepConfirmed', 'stepReady', 'stepCompleted'];
+    const circles = ['circlePlaced', 'circleConfirmed', 'circleReady', 'circleCompleted'];
+    
+    // Customize label for step 3
+    const stepReadyLabel = document.getElementById('stepReadyLabel');
+    if (order.fulfillmentType === 'DELIVERY') {
+      stepReadyLabel.textContent = currentLang === 'bn' ? 'ডেলিভারিতে' : 'Out for Delivery';
+    } else {
+      stepReadyLabel.textContent = currentLang === 'bn' ? 'প্রস্তুত' : 'Ready';
+    }
+
+    // Step index: 0 = Placed, 1 = Confirmed, 2 = Ready/Out_for_delivery, 3 = Completed
+    let activeIndex = 0;
+    if (status === 'CONFIRMED') activeIndex = 1;
+    else if (status === 'READY' || status === 'OUT_FOR_DELIVERY') activeIndex = 2;
+    else if (status === 'COMPLETED') activeIndex = 3;
+    else activeIndex = 0;
+
+    const isOrderCompleted = (status === 'COMPLETED');
+
+    steps.forEach((stepId, idx) => {
+      const stepEl = document.getElementById(stepId);
+      const circleEl = document.getElementById(circles[idx]);
+      if (!stepEl || !circleEl) return;
+      
+      stepEl.classList.remove('completed', 'active');
+
+      if (isOrderCompleted) {
+        // If order completed, all steps are completed with checkmark
+        stepEl.classList.add('completed');
+        circleEl.textContent = '✓';
+      } else if (idx < activeIndex) {
+        stepEl.classList.add('completed');
+        circleEl.textContent = '✓';
+      } else if (idx === activeIndex) {
+        stepEl.classList.add('active');
+        circleEl.textContent = String(idx + 1);
+      } else {
+        circleEl.textContent = String(idx + 1);
+      }
+    });
+
+    // Stepper progress line width
+    const progressPercent = isOrderCompleted ? 100 : (activeIndex / (steps.length - 1)) * 100;
+    document.getElementById('stepperProgress').style.width = `${progressPercent}%`;
+
+    // Timestamps: only show timestamps for steps that have actually occurred
+    document.getElementById('timePlaced').textContent = formatTimestamp(order.createdAt);
+    document.getElementById('timeConfirmed').textContent = order.confirmedAt ? formatTimestamp(order.confirmedAt) : (activeIndex >= 1 ? '--:--' : '');
+    document.getElementById('timeReady').textContent = order.readyAt ? formatTimestamp(order.readyAt) : (activeIndex >= 2 ? '--:--' : '');
+    document.getElementById('timeCompleted').textContent = order.completedAt ? formatTimestamp(order.completedAt) : (isOrderCompleted ? '--:--' : '');
+  }
+
+  function renderPaymentSection(order) {
+    const isBn = currentLang === 'bn';
+    const payMethod = order.paymentMethod ? order.paymentMethod.toString().trim().toUpperCase() : null;
+    const rawPayStatus = (order.paymentStatus || 'PENDING').toString().trim().toUpperCase();
+    const isPaid = (rawPayStatus === 'PAID');
+
+    const badge = document.getElementById('paymentStatusBadge');
+    const upiBlock = document.getElementById('upiPaymentBlock');
+    const cashBlock = document.getElementById('cashPaymentBlock');
+    const paidBlock = document.getElementById('paidSuccessBlock');
+    const creditBlock = document.getElementById('creditPaymentBlock');
+    const pendingBlock = document.getElementById('pendingPaymentBlock');
+
+    if (upiBlock) upiBlock.style.display = 'none';
+    if (cashBlock) cashBlock.style.display = 'none';
+    if (paidBlock) paidBlock.style.display = 'none';
+    if (creditBlock) creditBlock.style.display = 'none';
+    if (pendingBlock) pendingBlock.style.display = 'none';
+
+    // 1. Only show "Payment Confirmed" if paymentStatus is actually verified PAID in Firestore
+    if (isPaid) {
+      badge.textContent = isBn ? 'পরিশোধিত' : 'PAID';
+      badge.style.background = 'var(--green-bg)';
+      badge.style.color = 'var(--green-success)';
+      badge.style.border = '1px solid var(--green-border)';
+      if (paidBlock) {
+        paidBlock.style.display = 'flex';
+        const methodStr = payMethod === 'CASH' 
+          ? (isBn ? 'নগদে' : 'in Cash') 
+          : (payMethod === 'CREDIT' ? (isBn ? 'খাতায়' : 'via Khata') : 'via UPI');
+        const refText = order.paymentReference ? ` (UTR: ${order.paymentReference})` : '';
+        document.getElementById('paidSuccessSub').textContent = isBn 
+          ? `পেমেন্ট গ্রহণ করা হয়েছে (${methodStr})${refText}।` 
+          : `Payment received and verified by store (${methodStr})${refText}.`;
+      }
+      return;
+    }
+
+    // 2. Otherwise show a Payment Pending state
+    if (payMethod === 'CREDIT' || rawPayStatus === 'CREDIT') {
+      badge.textContent = isBn ? 'বাকি খাতা' : 'KHATA CREDIT';
+      badge.style.background = '#FAF5FF';
+      badge.style.color = '#7E22CE';
+      badge.style.border = '1px solid #E9D5FF';
+      if (creditBlock) {
+        creditBlock.style.display = 'flex';
+      }
+      return;
+    }
+
+    if (payMethod === 'CASH' || rawPayStatus === 'COD') {
+      badge.textContent = isBn ? 'নগদ বাকি' : 'CASH (PENDING)';
+      badge.style.background = 'var(--amber-bg)';
+      badge.style.color = 'var(--amber-warning)';
+      badge.style.border = '1px solid var(--amber-border)';
+      if (cashBlock) {
+        cashBlock.style.display = 'flex';
+      }
+      return;
+    }
+
+    if (payMethod === 'UPI') {
+      badge.textContent = isBn ? 'UPI বাকি' : 'UPI PENDING';
+      badge.style.background = 'var(--amber-bg)';
+      badge.style.color = 'var(--amber-warning)';
+      badge.style.border = '1px solid var(--amber-border)';
+      if (upiBlock) {
+        upiBlock.style.display = 'block';
+        const upiId = storeProfile.upiVpa || '9609319228-1@okbizaxis';
+        document.getElementById('upiIdDisplay').textContent = upiId;
+
+        const totalAmt = Number(order.totalAmount || 0).toFixed(2);
+        renderInlineUpiQr(upiId, storeProfile.payeeName || storeProfile.storeName, totalAmt, order.orderNumber || order.id, order.dynamicUpiUrl);
+
+        // Check if UTR or screenshot already submitted
+        const utrNotice = document.getElementById('utrSubmittedNotice');
+        const utrInput = document.getElementById('utrInput');
+        const hasUtr = !order.paymentReference ? false : true;
+        const hasScreenshot = !order.paymentScreenshotData ? false : true;
+
+        if (hasUtr || hasScreenshot) {
+          utrNotice.style.display = 'flex';
+          let detailHtml = '';
+          if (hasUtr) {
+            detailHtml += `<div><strong>UTR:</strong> ${escapeHtml(order.paymentReference)}</div>`;
+            utrInput.value = order.paymentReference;
+          }
+          if (hasScreenshot) {
+            detailHtml += `<div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+              <span>📷</span>
+              <span>${isBn ? 'পেমেন্ট স্ক্রিনশট সংযুক্ত' : 'Payment screenshot attached'}</span>
+              <button type="button" id="viewSubmittedProofBtn" style="background: none; border: none; color: var(--accent); font-weight: bold; text-decoration: underline; cursor: pointer; padding: 0; font-size: 11px;">${isBn ? 'দেখুন' : 'View'}</button>
+            </div>`;
+          }
+          document.getElementById('utrSubmittedVal').innerHTML = detailHtml;
+          const viewBtn = document.getElementById('viewSubmittedProofBtn');
+          if (viewBtn) {
+            viewBtn.onclick = function() {
+              openFullscreenScreenshot(order.paymentScreenshotData);
+            };
+          }
+        } else {
+          utrNotice.style.display = 'none';
+        }
+      }
+      return;
+    }
+
+    // 5. If unassigned (Pending Store Assignment)
+    badge.textContent = isBn ? 'পেমেন্ট বাকি' : 'PAYMENT PENDING';
+    badge.style.background = '#FEF3C7';
+    badge.style.color = '#B45309';
+    badge.style.border = '1px solid #FCD34D';
+    if (pendingBlock) {
+      pendingBlock.style.display = 'flex';
+    }
+  }
+
+  function renderInlineUpiQr(pa, pn, am, tr, dynamicUrl) {
+    const qrKey = dynamicUrl || `${pa}_${am}_${tr}`;
+    if (qrRenderedForAmount === qrKey) return;
+    qrRenderedForAmount = qrKey;
+
+    const cleanPa = pa.trim();
+    const cleanPn = encodeURIComponent((pn || 'Kali Mata Variety Store').trim());
+    const cleanAm = encodeURIComponent(am);
+    const cleanTr = encodeURIComponent(tr);
+
+    // Standard NPCI UPI Intent URI or dynamic bill checkout URL from store
+    const upiUri = dynamicUrl || `upi://pay?pa=${cleanPa}&pn=${cleanPn}&am=${cleanAm}&cu=INR&tr=${cleanTr}&tn=${encodeURIComponent('Online Order ' + tr)}`;
+
+    const qrContainer = document.getElementById("qrcode");
+    qrContainer.innerHTML = '';
+
+    try {
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(qrContainer, {
+          text: upiUri,
+          width: 170,
+          height: 170,
+          colorDark: "#0F172A",
+          colorLight: "#FFFFFF",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
+    } catch (e) {
+      console.warn("QR render exception:", e);
+    }
+  }
+
+  function renderCustomerReceipt(order) {
+    const receiptContainer = document.getElementById('receiptVoucherBody');
+    if (!receiptContainer || !order) return;
+    const isBn = currentLang === 'bn';
+
+    const storeName = storeProfile.storeName || "Kali Mata Variety Store";
+    const storePhone = storeProfile.phone || "9609319228";
+    const dateStr = order.createdAt ? new Date(order.createdAt).toLocaleString(isBn ? 'bn-IN' : 'en-IN') : '--';
+    const payMethod = order.paymentMethod ? order.paymentMethod.toString().trim().toUpperCase() : null;
+    const payStatus = (order.paymentStatus || 'PENDING').toString().trim().toUpperCase();
+    const orderStatus = (order.status || 'PLACED').toString().trim().toUpperCase();
+
+    const isOrderCompleted = (orderStatus === 'COMPLETED' || orderStatus === 'DELIVERED' || orderStatus === 'FULFILLED');
+    const isPaymentPaid = (payStatus === 'PAID');
+    const isKhataCredit = (payMethod === 'CREDIT' || payStatus === 'CREDIT');
+
+    // Only render finalized receipt if merchant has fulfilled/completed the order AND payment is settled (PAID or KHATA credit)
+    const isReceiptFinalized = isOrderCompleted && (isPaymentPaid || isKhataCredit || order.saleId);
+
+    const printBtn = document.getElementById('printReceiptBtn');
+    const receiptStatusNote = document.getElementById('receiptStatusNote');
+
+    if (!isReceiptFinalized) {
+      if (printBtn) printBtn.style.display = 'none';
+      if (receiptStatusNote) {
+        receiptStatusNote.textContent = isBn 
+          ? 'দোকানদার কর্তৃক অর্ডার ও পেমেন্ট সম্পন্ন হলে রসিদ প্রদান করা হবে' 
+          : 'Official receipt generated upon store completion and payment confirmation';
+      }
+
+      receiptContainer.innerHTML = `
+        <div style="text-align: center; padding: 22px 14px; background: #F8FAFC; border: 1.5px dashed #CBD5E1; border-radius: 8px;">
+          <div style="font-size: 26px; margin-bottom: 6px;">⏳</div>
+          <div style="font-size: 13.5px; font-weight: 800; color: #1E293B; margin-bottom: 4px;">
+            ${isBn ? 'পাকা বিল ও অফিসিয়াল রসিদ অপেক্ষমান' : 'Official Bill & Receipt Pending'}
+          </div>
+          <div style="font-size: 11.5px; color: #64748B; max-width: 320px; margin: 0 auto; line-height: 1.4;">
+            ${isBn 
+              ? 'দোকানদার অর্ডার সম্পন্ন ও পেমেন্ট নিশ্চিত করার পর এখানে পাকা বিল ও ভাউচার পাওয়া যাবে।' 
+              : 'Your official store receipt with confirmed payment details will be generated here once the store finalizes and completes your order.'}
+          </div>
+          <div style="margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; background: #FEF3C7; border: 1px solid #FCD34D; color: #92400E; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px;">
+            <span>●</span>
+            <span>${isBn ? 'স্ট্যাটাস: অর্ডার প্রক্রিয়াধীন' : 'Status: Order Processing'}</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // When finalized by merchant:
+    if (printBtn) printBtn.style.display = 'inline-flex';
+    if (receiptStatusNote) {
+      receiptStatusNote.textContent = isBn 
+        ? 'দোকানদার কর্তৃক নির্ধারিত পেমেন্ট পদ্ধতি প্রতিফলিত' 
+        : 'Reflecting store-assigned payment method';
+    }
+
+    let paymentBadgeHtml = '';
+    if (isPaymentPaid) {
+      const modeText = payMethod === 'CASH' 
+        ? (isBn ? 'নগদ পরিশোধিত' : 'PAID IN CASH') 
+        : (isBn ? 'UPI মারফত পরিশোধিত' : 'PAID VIA UPI');
+      paymentBadgeHtml = `<div style="background: #F0FDF4; border: 1.5px solid #86EFAC; color: #15803D; font-weight: 800; padding: 8px 12px; border-radius: 6px; text-align: center; font-size: 13px; letter-spacing: 0.5px; margin-top: 10px;">
+        ✅ ${modeText} ${order.paymentReference ? `(UTR: ${escapeHtml(order.paymentReference)})` : ''}
+      </div>`;
+    } else if (isKhataCredit) {
+      paymentBadgeHtml = `<div style="background: #FAF5FF; border: 1.5px solid #D8B4FE; color: #7E22CE; font-weight: 800; padding: 8px 12px; border-radius: 6px; text-align: center; font-size: 13px; letter-spacing: 0.5px; margin-top: 10px;">
+        📒 ${isBn ? 'বাকি খাতায় লিপিবদ্ধ (KHATA CREDIT)' : 'BILLED TO KHATA CREDIT LEDGER'}
+      </div>`;
+    } else if (payMethod === 'CASH') {
+      paymentBadgeHtml = `<div style="background: #FFFBEB; border: 1.5px solid #FCD34D; color: #B45309; font-weight: 800; padding: 8px 12px; border-radius: 6px; text-align: center; font-size: 13px; margin-top: 10px;">
+        💵 ${isBn ? 'নগদে পরিশোধিত (PAID IN CASH)' : 'PAID IN CASH'}
+      </div>`;
+    } else {
+      paymentBadgeHtml = `<div style="background: #F0FDF4; border: 1.5px solid #86EFAC; color: #15803D; font-weight: 800; padding: 8px 12px; border-radius: 6px; text-align: center; font-size: 13px; letter-spacing: 0.5px; margin-top: 10px;">
+        ✅ ${isBn ? 'পরিশোধিত ও সম্পন্ন' : 'PAID & COMPLETED'}
+      </div>`;
+    }
+
+    let itemsHtml = '';
+    const items = order.items || [];
+    items.forEach((item, idx) => {
+      const name = item.name || `Item #${idx+1}`;
+      const qty = item.quantity || 1;
+      const unit = item.unit || '';
+      const price = Number(item.price || 0).toFixed(2);
+      const subtotal = Number(item.subtotal || (qty * item.price)).toFixed(2);
+      itemsHtml += `
+        <tr style="border-bottom: 1px dashed #E2E8F0;">
+          <td style="padding: 6px 4px; text-align: left;">
+            <div style="font-weight: 600; color: #0F172A;">${escapeHtml(name)}</div>
+            <div style="font-size: 10.5px; color: #64748B;">${qty} ${unit} × ₹${price}</div>
+          </td>
+          <td style="padding: 6px 4px; text-align: right; font-weight: 700; color: #0F172A; vertical-align: middle;">
+            ₹${subtotal}
+          </td>
+        </tr>
+      `;
+    });
+
+    receiptContainer.innerHTML = `
+      <div style="text-align: center; margin-bottom: 12px; border-bottom: 1px solid #E2E8F0; padding-bottom: 8px;">
+        <div style="font-size: 15px; font-weight: 900; color: #0F172A; letter-spacing: 0.3px;">${escapeHtml(storeName)}</div>
+        <div style="font-size: 11px; color: #64748B; margin-top: 2px;">📞 ${escapeHtml(storePhone)}</div>
+        <div style="display: inline-block; background: #0F172A; color: white; font-size: 9.5px; font-weight: 800; padding: 2px 8px; border-radius: 4px; margin-top: 6px; letter-spacing: 0.5px;">
+          RETAIL ORDER INVOICE
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; background: #F8FAFC; padding: 8px 10px; border-radius: 6px; margin-bottom: 12px;">
+        <div>
+          <div style="color: #64748B;">${isBn ? 'অর্ডার নম্বর:' : 'Order No:'}</div>
+          <div style="font-weight: 700; color: #0F172A;">${escapeHtml(order.orderNumber || order.id)}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="color: #64748B;">${isBn ? 'তারিখ ও সময়:' : 'Date:'}</div>
+          <div style="font-weight: 600; color: #0F172A;">${dateStr}</div>
+        </div>
+        <div>
+          <div style="color: #64748B;">${isBn ? 'গ্রাহক:' : 'Customer:'}</div>
+          <div style="font-weight: 700; color: #0F172A;">${escapeHtml(order.customerName || '--')}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="color: #64748B;">${isBn ? 'ফোন:' : 'Phone:'}</div>
+          <div style="font-weight: 600; color: #0F172A;">${escapeHtml(order.customerPhone || '--')}</div>
+        </div>
+        ${order.fulfillmentType === 'DELIVERY' && order.deliverySlot ? `
+        <div style="grid-column: span 2; border-top: 1px dashed #CBD5E1; padding-top: 4px; margin-top: 2px;">
+          <span style="color: #64748B;">${isBn ? 'ডেলিভারি স্লট:' : 'Delivery Slot:'}</span>
+          <span style="font-weight: 700; color: #0369A1;"> ⏰ ${escapeHtml(order.deliverySlot)}</span>
+        </div>` : ''}
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 11.5px;">
+        <thead>
+          <tr style="border-bottom: 1.5px solid #CBD5E1; color: #64748B; font-size: 10.5px; text-transform: uppercase;">
+            <th style="text-align: left; padding: 4px;">Item</th>
+            <th style="text-align: right; padding: 4px;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+
+      ${order.fulfillmentType === 'DELIVERY' ? `
+      <div style="border-top: 1px dashed #CBD5E1; padding-top: 6px; margin-bottom: 6px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #64748B; margin-bottom: 4px;">
+          <span>${isBn ? 'পণ্যসমূহের মূল্য (Subtotal):' : 'Items Subtotal:'}</span>
+          <span style="font-weight: 600; color: #0F172A;">₹${Number(order.subtotal || order.totalAmount || 0).toFixed(2)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11.5px; color: #64748B; margin-bottom: 4px;">
+          <span>${isBn ? 'ডেলিভারি চার্জ:' : 'Delivery Fee:'}</span>
+          <span style="font-weight: 700; color: ${Number(order.deliveryFee || 0) > 0 ? '#0F172A' : '#15803D'};">
+            ${Number(order.deliveryFee || 0) > 0 ? `₹${Number(order.deliveryFee).toFixed(2)}` : (isBn ? 'বিনামূল্যে (FREE)' : 'FREE')}
+          </span>
+        </div>
+      </div>` : ''}
+
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1.5px solid #0F172A; padding-top: 8px; margin-bottom: 4px;">
+        <span style="font-size: 13px; font-weight: 800; color: #0F172A;">${isBn ? 'সর্বমোট প্রদেয়:' : 'Total Amount:'}</span>
+        <span style="font-size: 16px; font-weight: 900; color: #0F172A;">₹${Number(order.totalAmount || 0).toFixed(2)}</span>
+      </div>
+
+      ${paymentBadgeHtml}
+
+      <div style="text-align: center; margin-top: 10px; font-size: 10px; color: #94A3B8;">
+        Thank you for shopping with ${escapeHtml(storeName)}!
+      </div>
+    `;
+  }
+
+  function printCustomerReceipt() {
+    window.print();
+  }
+
+  // 40px Quiet Zone QR Image Download Function (Duplicated from public/pay/index.html)
+  function downloadPaddedQr() {
+    const qrContainer = document.getElementById('qrcode');
+    if (!qrContainer) return;
+
+    const canvas = qrContainer.querySelector('canvas');
+    const img = qrContainer.querySelector('img');
+
+    function isVisible(el) {
+      if (!el) return false;
+      try {
+        return window.getComputedStyle(el).display !== 'none';
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function getCanvasDataUrl(cvs) {
+      if (cvs && typeof cvs.toDataURL === 'function') {
+        try {
+          const u = cvs.toDataURL('image/png');
+          if (u && u !== 'data:,') return u;
+        } catch (e) {
+          console.warn('Canvas toDataURL failed', e);
+        }
+      }
+      return null;
+    }
+
+    function getImgDataUrl(im) {
+      if (im && im.src && im.src.startsWith('data:image/')) {
+        return im.src;
+      }
+      return null;
+    }
+
+    let dataUrl = null;
+    const canvasVisible = isVisible(canvas);
+    const imgVisible = isVisible(img);
+
+    if (imgVisible && !canvasVisible) {
+      dataUrl = getImgDataUrl(img) || getCanvasDataUrl(canvas);
+    } else if (canvasVisible && !imgVisible) {
+      dataUrl = getCanvasDataUrl(canvas) || getImgDataUrl(img);
+    } else {
+      dataUrl = getCanvasDataUrl(canvas) || getImgDataUrl(img);
+    }
+
+    if (!dataUrl) {
+      alert(currentLang === 'bn' ? 'QR কোড তৈরি হচ্ছে, অনুগ্রহ করে এক মুহূর্ত অপেক্ষা করুন।' : 'QR code is not ready yet, please wait a moment.');
+      return;
+    }
+
+    const qrImage = new Image();
+    qrImage.onload = function() {
+      try {
+        const qrWidth = qrImage.naturalWidth || qrImage.width || 170;
+        const qrHeight = qrImage.naturalHeight || qrImage.height || 170;
+        const padding = 40; // Strict 40px quiet-zone border
+
+        const paddedCanvas = document.createElement('canvas');
+        paddedCanvas.width = qrWidth + (padding * 2);
+        paddedCanvas.height = qrHeight + (padding * 2);
+
+        const ctx = paddedCanvas.getContext('2d');
+        if (!ctx) {
+          alert('Could not prepare the QR image. Please try again.');
+          return;
+        }
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, paddedCanvas.width, paddedCanvas.height);
+        ctx.drawImage(qrImage, padding, padding, qrWidth, qrHeight);
+
+        const finalDataUrl = paddedCanvas.toDataURL('image/png');
+        if (!finalDataUrl || finalDataUrl === 'data:,') {
+          alert('Could not prepare the QR image. Please try again.');
+          return;
+        }
+
+        const orderNum = currentOrder ? (currentOrder.orderNumber || currentOrder.id) : 'order';
+        const filename = `upi-qr-${orderNum}.png`;
+
+        const a = document.createElement('a');
+        a.href = finalDataUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        const downloadBtn = document.getElementById('downloadQrBtn');
+        const origHtml = downloadBtn.innerHTML;
+        downloadBtn.innerHTML = `<span>✓</span> <span>${currentLang === 'bn' ? 'সেভ হয়েছে' : 'Saved to Device'}</span>`;
+        downloadBtn.style.color = 'var(--green-success)';
+        downloadBtn.style.borderColor = 'var(--green-success)';
+        setTimeout(() => {
+          downloadBtn.innerHTML = origHtml;
+          downloadBtn.style.color = '';
+          downloadBtn.style.borderColor = '';
+        }, 2200);
+      } catch (err) {
+        console.error("QR canvas export error:", err);
+      }
+    };
+    qrImage.src = dataUrl;
+  }
+
+  // Copy UPI ID
+  function copyUpiId() {
+    const upiId = storeProfile.upiVpa || '9609319228-1@okbizaxis';
+    copyToClipboard(upiId, () => {
+      const btn = document.getElementById('copyUpiBtn');
+      btn.textContent = i18n[currentLang].copied;
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  // HTML escape helper
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // Diagnostic On-Screen Error Handling for Payment Proof
+  let currentProofSubmissionStage = null;
+
+  function hideProofError() {
+    const el = document.getElementById('paymentProofErrorContainer');
+    if (el) {
+      el.style.display = 'none';
+      el.innerHTML = '';
+    }
+  }
+
+  function showProofDiagnosticError(stepTitle, errorCode, errorMessage, extraDetails = '', recoveryHtml = '') {
+    const el = document.getElementById('paymentProofErrorContainer');
+    if (!el) return;
+    el.style.display = 'block';
+    el.innerHTML = `
+      <div style="background: #fff0f0; border: 1px solid #ffcdd2; border-radius: 8px; padding: 10px 12px; text-align: left; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; color: #b71c1c; word-break: break-word; line-height: 1.5;">
+        <div><strong>Failed Step:</strong> ${escapeHtml(stepTitle)}</div>
+        <div style="margin-top: 3px;"><strong>Error Code:</strong> <span style="background: #ffebee; padding: 1px 5px; border-radius: 4px; font-weight: bold;">${escapeHtml(errorCode || 'unknown')}</span></div>
+        <div style="margin-top: 3px;"><strong>Error Message:</strong> ${escapeHtml(errorMessage || 'No message')}</div>
+        ${extraDetails ? `<div style="margin-top: 3px; color: #4b5563;"><strong>Details:</strong> ${escapeHtml(extraDetails)}</div>` : ''}
+        ${recoveryHtml}
+      </div>
+    `;
+  }
+
+  // Selected Screenshot State & Handlers
+  let selectedScreenshotFile = null;
+
+  function handleScreenshotSelected(event) {
+    hideProofError();
+    const file = event.target.files && event.target.files[0];
+    const previewContainer = document.getElementById('paymentScreenshotPreviewContainer');
+    const previewImg = document.getElementById('paymentScreenshotPreviewImg');
+    const nameEl = document.getElementById('paymentScreenshotFileName');
+    const sizeEl = document.getElementById('paymentScreenshotFileSize');
+
+    if (!file) {
+      clearSelectedScreenshot();
+      return;
+    }
+
+    const isImg = (file.type && file.type.startsWith('image/')) ||
+                  /\.(jpe?g|png|webp|bmp|gif|heic|heif)$/i.test(file.name || '');
+    if (!isImg) {
+      showProofDiagnosticError(
+        'File Selection',
+        'invalid-file-type',
+        currentLang === 'bn' ? 'অনুগ্রহ করে শুধুমাত্র ছবি ফাইল নির্বাচন করুন।' : 'Please select a valid image file.'
+      );
+      clearSelectedScreenshot();
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      showProofDiagnosticError(
+        'File Selection',
+        'file-too-large',
+        currentLang === 'bn' ? 'ছবির সাইজ ১৫MB-এর কম হতে হবে।' : 'Original image size must be less than 15MB.'
+      );
+      clearSelectedScreenshot();
+      return;
+    }
+
+    selectedScreenshotFile = file;
+    nameEl.textContent = file.name;
+    sizeEl.textContent = `${(file.size / 1024).toFixed(1)} KB (Original)`;
+    try {
+      const tempUrl = URL.createObjectURL(file);
+      previewImg.src = tempUrl;
+      previewContainer.style.display = 'flex';
+    } catch (_) {
+      previewContainer.style.display = 'flex';
+    }
+  }
+
+  function clearSelectedScreenshot() {
+    selectedScreenshotFile = null;
+    const input = document.getElementById('paymentScreenshotInput');
+    if (input) input.value = '';
+    const previewContainer = document.getElementById('paymentScreenshotPreviewContainer');
+    if (previewContainer) previewContainer.style.display = 'none';
+    const previewImg = document.getElementById('paymentScreenshotPreviewImg');
+    if (previewImg && previewImg.src && previewImg.src.startsWith('blob:')) {
+      try { URL.revokeObjectURL(previewImg.src); } catch (_) {}
+      previewImg.src = '';
+    }
+  }
+
+  function openFullscreenScreenshot(src) {
+    if (!src) return;
+    const modal = document.getElementById('screenshotModal');
+    const modalImg = document.getElementById('screenshotModalImg');
+    if (modal && modalImg) {
+      modalImg.src = src;
+      modal.style.display = 'flex';
+    }
+  }
+
+  function closeScreenshotModal() {
+    const modal = document.getElementById('screenshotModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function setProofSubmissionStage(stageName) {
+    currentProofSubmissionStage = stageName;
+    const btn = document.getElementById('submitUtrBtn');
+    if (btn && stageName) {
+      const isBn = currentLang === 'bn';
+      let label = stageName;
+      if (stageName === 'Reading file') label = isBn ? 'ফাইল পড়া হচ্ছে...' : 'Reading file...';
+      else if (stageName === 'Compressing image') label = isBn ? 'ছবি কমপ্রেস হচ্ছে...' : 'Compressing image...';
+      else if (stageName === 'Encoding image') label = isBn ? 'এনকোড করা হচ্ছে...' : 'Encoding image...';
+      else if (stageName === 'Checking size limit') label = isBn ? 'সাইজ যাচাই হচ্ছে...' : 'Checking size...';
+      else if (stageName === 'Uploading proof') label = isBn ? 'জমা হচ্ছে...' : 'Uploading proof...';
+      btn.textContent = label;
+    }
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => {
+        const err = new Error("Failed to read raw image file.");
+        err.code = "file-read-error";
+        err.stage = "Reading file";
+        reject(err);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Compress screenshot with 15-second timeout guard around compression
+  async function compressScreenshotWithTimeout(file, maxDimension = 1200, quality = 0.82) {
+    if (!file) return null;
+
+    const isImg = (file.type && file.type.startsWith('image/')) ||
+                  /\.(jpe?g|png|webp|bmp|gif|heic|heif)$/i.test(file.name || '');
+    if (!isImg) {
+      const typeErr = new Error(currentLang === 'bn' ? 'অনুগ্রহ করে একটি ছবি ফাইল নির্বাচন করুন।' : 'Please select a valid image file.');
+      typeErr.code = 'invalid-file-type';
+      typeErr.stage = 'Reading file';
+      throw typeErr;
+    }
+
+    setProofSubmissionStage("Reading file");
+
+    // Diagnostic logging of File MIME type and first 32 header bytes
+    let isHeic = false;
+    try {
+      const slice = file.slice(0, 32);
+      const buffer = await slice.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
+      const ascii = Array.from(bytes).map(b => (b >= 32 && b <= 126 ? String.fromCharCode(b) : '.')).join('');
+      console.log(`[Payment Proof Diagnostic] File name: "${file.name}", reported type: "${file.type}", size: ${file.size} bytes`);
+      console.log(`[Payment Proof Diagnostic] First 32 bytes (hex): ${hex}`);
+      console.log(`[Payment Proof Diagnostic] First 32 bytes (ASCII): ${ascii}`);
+
+      // Check for HEIC / HEIF / ISO Base Media File Format (ftyp box at offset 4)
+      if (bytes.length >= 12) {
+        const ftyp = String.fromCharCode(bytes[4], bytes[5], bytes[6], bytes[7]);
+        if (ftyp === 'ftyp') {
+          const brand = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]).toLowerCase();
+          const heicBrands = ['heic', 'heix', 'hevc', 'hevx', 'mif1', 'msf1', 'heim', 'heis'];
+          if (heicBrands.includes(brand)) {
+            isHeic = true;
+          } else {
+            for (let offset = 12; offset + 4 <= bytes.length; offset += 4) {
+              const comp = String.fromCharCode(bytes[offset], bytes[offset+1], bytes[offset+2], bytes[offset+3]).toLowerCase();
+              if (heicBrands.includes(comp)) {
+                isHeic = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch (diagErr) {
+      console.warn('[Payment Proof Diagnostic] Could not read file header bytes:', diagErr);
+    }
+
+    // Specific actionable error for HEIC/HEIF photos mislabeled as .jpg or directly selected
+    if (isHeic || (file.type && (file.type.includes('heic') || file.type.includes('heif')))) {
+      const isBn = currentLang === 'bn';
+      const heicErr = new Error(
+        isBn
+          ? 'এই ছবির ফরম্যাটটি সমর্থিত নয় — সরাসরি ক্যামেরার ছবির পরিবর্তে স্ক্রিনশট বা অন্য ছবি চেষ্টা করুন।'
+          : "This photo format isn't supported — please try a screenshot or a different photo instead of a direct camera photo."
+      );
+      heicErr.code = 'unsupported-heic-format';
+      heicErr.stage = 'Compressing image';
+      heicErr.isHeic = true;
+      heicErr.details = `Detected HEIC/HEIF camera container in "${file.name}" (MIME: ${file.type || 'unknown'}). Browsers cannot decode HEIC in HTML5 canvas.`;
+      throw heicErr;
+    }
+
+    // Fast path: native createImageBitmap with 15s timeout guard
+    if (typeof window.createImageBitmap === 'function') {
+      try {
+        setProofSubmissionStage("Compressing image");
+        const bitmap = await Promise.race([
+          window.createImageBitmap(file),
+          new Promise((_, reject) => setTimeout(() => {
+            const timeoutErr = new Error("Image processing timed out — try a smaller photo or submit without one.");
+            timeoutErr.code = "timeout";
+            timeoutErr.stage = "Compressing image";
+            timeoutErr.details = "Browser was unable to process the selected photo within 15 seconds.";
+            reject(timeoutErr);
+          }, 15000))
+        ]);
+
+        let width = bitmap.width;
+        let height = bitmap.height;
+
+        if (width > 0 && height > 0) {
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(bitmap, 0, 0, width, height);
+            setProofSubmissionStage("Encoding image");
+            const base64Data = canvas.toDataURL('image/jpeg', quality);
+            if (typeof bitmap.close === 'function') bitmap.close();
+            return base64Data;
+          }
+        }
+        if (typeof bitmap.close === 'function') bitmap.close();
+      } catch (bitmapErr) {
+        if (bitmapErr.code === 'timeout') throw bitmapErr;
+        console.warn('[Payment Proof] createImageBitmap failed, attempting lightweight ObjectURL fallback:', bitmapErr);
+      }
+    }
+
+    // Fallback path: URL.createObjectURL + Image with strict 15-second timeout guard
+    return new Promise((resolve, reject) => {
+      let objectUrl = null;
+      let timeoutId = setTimeout(() => {
+        if (objectUrl) {
+          try { URL.revokeObjectURL(objectUrl); } catch(_) {}
+        }
+        const timeoutErr = new Error("Image processing timed out — try a smaller photo or submit without one.");
+        timeoutErr.code = "timeout";
+        timeoutErr.stage = currentProofSubmissionStage || "Compressing image";
+        timeoutErr.details = "Browser was unable to process the selected photo within 15 seconds.";
+        reject(timeoutErr);
+      }, 15000);
+
+      try {
+        setProofSubmissionStage("Reading file");
+        objectUrl = URL.createObjectURL(file);
+        const img = new Image();
+
+        img.onload = () => {
+          clearTimeout(timeoutId);
+          try {
+            setProofSubmissionStage("Compressing image");
+            let width = img.naturalWidth || img.width;
+            let height = img.naturalHeight || img.height;
+
+            if (width <= 0 || height <= 0) {
+              if (objectUrl) {
+                try { URL.revokeObjectURL(objectUrl); } catch(_) {}
+              }
+              const dimErr = new Error("Invalid image dimensions (0x0).");
+              dimErr.code = "invalid-dimensions";
+              dimErr.stage = "Compressing image";
+              return reject(dimErr);
+            }
+
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              } else {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              if (objectUrl) {
+                try { URL.revokeObjectURL(objectUrl); } catch(_) {}
+              }
+              const ctxErr = new Error("Canvas 2D context is not available.");
+              ctxErr.code = "canvas-context-error";
+              ctxErr.stage = "Compressing image";
+              return reject(ctxErr);
+            }
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+
+            setProofSubmissionStage("Encoding image");
+            const base64Data = canvas.toDataURL('image/jpeg', quality);
+
+            if (objectUrl) {
+              try { URL.revokeObjectURL(objectUrl); } catch(_) {}
+            }
+            resolve(base64Data);
+          } catch (processErr) {
+            if (objectUrl) {
+              try { URL.revokeObjectURL(objectUrl); } catch(_) {}
+            }
+            processErr.stage = processErr.stage || "Compressing image";
+            reject(processErr);
+          }
+        };
+
+        img.onerror = () => {
+          clearTimeout(timeoutId);
+          if (objectUrl) {
+            try { URL.revokeObjectURL(objectUrl); } catch(_) {}
+          }
+          const decodeErr = new Error("Browser could not decode the image file format.");
+          decodeErr.code = "image-decode-error";
+          decodeErr.stage = "Compressing image";
+          decodeErr.rawFileSize = file.size;
+          decodeErr.canFallbackToOriginal = (file.size <= 700 * 1024);
+          reject(decodeErr);
+        };
+
+        img.src = objectUrl;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (objectUrl) {
+          try { URL.revokeObjectURL(objectUrl); } catch(_) {}
+        }
+        reject(err);
+      }
+    });
+  }
+
+  // Submit UTR and/or Payment Screenshot directly on orders/{orderId}
+  async function submitPaymentProof(skipCompression = false) {
+    hideProofError();
+    const input = document.getElementById('utrInput');
+    const btn = document.getElementById('submitUtrBtn');
+    const val = (input.value || '').trim();
+    const file = selectedScreenshotFile;
+    const isBn = currentLang === 'bn';
+
+    // Must submit at least one: UTR or screenshot
+    if (!val && !file) {
+      showProofDiagnosticError(
+        'Validation',
+        'missing-proof',
+        isBn ? 'অনুগ্রহ করে ১২ ডিজিটের UTR লিখুন অথবা পেমেন্ট স্ক্রিনশট আপলোড করুন।' : 'Please enter a UPI UTR reference number or upload a payment screenshot.'
+      );
+      input.focus();
+      return;
+    }
+
+    if (val && val.length < 6) {
+      showProofDiagnosticError(
+        'Validation',
+        'invalid-utr',
+        isBn ? 'অনুগ্রহ করে সঠিক UTR / রেফারেন্স নম্বর লিখুন (ন্যূনতম ৬ ডিজিট)।' : 'Please enter a valid 12-digit UPI UTR reference number (minimum 6 digits).'
+      );
+      input.focus();
+      return;
+    }
+
+    if (!currentOrder || !currentOrder.id) {
+      showProofDiagnosticError(
+        'Session',
+        'no-active-order',
+        isBn ? 'অর্ডারের তথ্য পাওয়া যায়নি।' : 'No active order found.'
+      );
+      return;
+    }
+
+    btn.disabled = true;
+    setProofSubmissionStage(file ? 'Reading file' : 'Uploading proof');
+
+    try {
+      let screenshotBase64 = null;
+      if (file) {
+        if (skipCompression) {
+          // Fallback: Skip compression and submit original file directly if under 700KB
+          if (file.size > 700 * 1024) {
+            const sizeKb = Math.round(file.size / 1024);
+            const sizeErr = new Error(isBn
+              ? `ছবির সাইজ অনেক বড় (${sizeKb}KB > ৭০০KB সীমা)। কমপ্রেশন ছাড়া জমা দেওয়া সম্ভব নয়।`
+              : `Original photo is too large (${sizeKb}KB > 700KB limit) to submit without compression.`);
+            sizeErr.code = 'size-cap-exceeded';
+            sizeErr.stage = 'Checking size limit';
+            throw sizeErr;
+          }
+          setProofSubmissionStage('Reading file');
+          screenshotBase64 = await readFileAsDataUrl(file);
+        } else {
+          screenshotBase64 = await compressScreenshotWithTimeout(file, 1200, 0.82);
+        }
+
+        // Size limit check: ~700KB cap check against screenshotData (Firestore 1MB limit safe)
+        setProofSubmissionStage('Checking size limit');
+        const MAX_ALLOWED_BASE64_BYTES = 700 * 1024;
+        if (screenshotBase64 && screenshotBase64.length > MAX_ALLOWED_BASE64_BYTES) {
+          const sizeKb = Math.round(screenshotBase64.length / 1024);
+          const sizeErr = new Error(isBn
+            ? `স্ক্রিনশটের সাইজ অনেক বড় (${sizeKb}KB > ৭০০KB limit)। অনুগ্রহ করে ছোট ছবি দিন অথবা ছবি ছাড়া UTR জমা দিন।`
+            : `Screenshot is too large (${sizeKb}KB > 700KB limit). Please choose a smaller photo or submit without one.`);
+          sizeErr.code = 'size-cap-exceeded';
+          sizeErr.stage = 'Checking size limit';
+          sizeErr.details = `Base64 length: ${screenshotBase64.length} bytes (~${sizeKb}KB). Max allowed: ${MAX_ALLOWED_BASE64_BYTES} bytes.`;
+          throw sizeErr;
+        }
+      }
+
+      setProofSubmissionStage('Uploading proof');
+      const updatePayload = {
+        paymentSubmittedAt: Date.now()
+      };
+      if (val) {
+        updatePayload.paymentReference = val;
+      }
+      if (screenshotBase64) {
+        updatePayload.paymentScreenshotData = screenshotBase64;
+      }
+
+      await db.collection('orders').doc(currentOrder.id).update(updatePayload);
+
+      // Reset local file selection on success
+      clearSelectedScreenshot();
+      alert(isBn
+        ? '✓ আপনার পেমেন্ট প্রমাণ সফলভাবে জমা হয়েছে! দোকানদার যাচাই করে অর্ডার প্রস্তুত করবেন।'
+        : '✓ Payment proof submitted successfully! The store will verify and process your order.'
+      );
+    } catch (e) {
+      console.error("[Payment Proof] Error submitting payment proof:", e);
+      const failedStage = e.stage || currentProofSubmissionStage || 'Uploading proof';
+      const errorCode = e.code || (e.name || 'submission-error');
+      const errorMessage = e.message || (isBn ? 'পেমেন্ট প্রমাণ জমা দেওয়া যায়নি।' : 'Failed to submit payment proof.');
+      const extraDetails = e.details || (e.stack ? String(e.stack).split('\n')[0] : '');
+
+      let recoveryHtml = '';
+      // Offer uncompressed original submission if decode failed and raw file is <= 700KB
+      if (file && file.size <= 700 * 1024 && (errorCode === 'image-decode-error' || e.canFallbackToOriginal)) {
+        const fileKb = Math.round(file.size / 1024);
+        recoveryHtml += `
+          <div style="margin-top: 10px; padding: 8px 10px; background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 6px; color: #92400E;">
+            <div style="font-weight: 700; margin-bottom: 4px;">
+              ${isBn ? '💡 বিকল্প সমাধান (কমপ্রেশন ছাড়া আসল ছবি):' : '💡 Recovery Option (Original Photo):'}
+            </div>
+            <div style="font-size: 10.5px; margin-bottom: 8px; line-height: 1.4;">
+              ${isBn 
+                ? `যেহেতু আপনার ছবির সাইজ (${fileKb}KB) ৭০০KB সীমার নিচে, আপনি কমপ্রেশন ছাড়াই সরাসরি আসল ছবিটি জমা দিতে পারেন:`
+                : `Since your original photo is only ${fileKb}KB (well within the 700KB limit), you can skip compression and submit the original photo directly:`}
+            </div>
+            <button type="button" onclick="submitOriginalProofWithoutCompression()" style="background: #D97706; color: white; border: none; border-radius: 6px; padding: 6px 12px; font-weight: 700; cursor: pointer; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+              ${isBn ? '📤 সরাসরি আসল ছবি জমা দিন' : '📤 Submit Original Photo Directly'} (${fileKb} KB)
+            </button>
+          </div>
+        `;
+      }
+
+      // If UTR is entered, always offer independent UTR-only submission
+      if (val && val.length >= 6) {
+        recoveryHtml += `
+          <div style="margin-top: 8px;">
+            <button type="button" onclick="submitUtrOnlyWithoutPhoto()" style="background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; border-radius: 6px; padding: 6px 12px; font-weight: 600; cursor: pointer; font-size: 11px;">
+              ${isBn ? '✓ ছবি বাদ দিয়ে শুধুমাত্র UTR জমা দিন' : '✓ Submit UTR Only (Without Photo)'}
+            </button>
+          </div>
+        `;
+      }
+
+      showProofDiagnosticError(failedStage, errorCode, errorMessage, extraDetails, recoveryHtml);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = isBn ? 'জমা দিন' : 'Submit';
+      currentProofSubmissionStage = null;
+    }
+  }
+
+  function submitOriginalProofWithoutCompression() {
+    return submitPaymentProof(true);
+  }
+
+  function submitUtrOnlyWithoutPhoto() {
+    clearSelectedScreenshot();
+    hideProofError();
+    return submitPaymentProof(false);
+  }
+
+  window.submitOriginalProofWithoutCompression = submitOriginalProofWithoutCompression;
+  window.submitUtrOnlyWithoutPhoto = submitUtrOnlyWithoutPhoto;
+
+  // Alias for backward compatibility with existing callers
+  window.submitUtr = submitPaymentProof;
+
+  // Render Items
+  function renderItemsList(order) {
+    const container = document.getElementById('itemsContainer');
+    container.innerHTML = '';
+
+    const items = order.items || [];
+    const isBn = currentLang === 'bn';
+
+    document.getElementById('itemsCountBadge').textContent = `${items.length} ${i18n[currentLang].items}`;
+
+    items.forEach(item => {
+      const name = item.name || 'Product';
+      const qty = item.quantity || 1;
+      const unit = item.unit || 'piece';
+      const price = Number(item.price || 0).toFixed(2);
+      const subtotal = Number(item.subtotal || (qty * item.price) || 0).toFixed(2);
+
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = `
+        <div>
+          <div class="item-name">${escapeHtml(name)}</div>
+          <div class="item-qty-rate">${qty} ${escapeHtml(unit)} × ₹${price}</div>
+        </div>
+        <div class="item-subtotal">₹${subtotal}</div>
+      `;
+      container.appendChild(row);
+    });
+
+    const subtotal = Number(order.subtotal || order.totalAmount || 0).toFixed(2);
+    const total = Number(order.totalAmount || 0).toFixed(2);
+    document.getElementById('subtotalAmount').textContent = `₹${subtotal}`;
+    document.getElementById('totalAmount').textContent = `₹${total}`;
+
+    const deliveryFeeRow = document.getElementById('deliveryFeeRow');
+    const deliveryFeeAmount = document.getElementById('deliveryFeeAmount');
+    const type = (order.fulfillmentType || 'PICKUP').toUpperCase();
+    if (deliveryFeeRow && deliveryFeeAmount) {
+      if (type === 'DELIVERY') {
+        deliveryFeeRow.style.display = 'flex';
+        const fee = Number(order.deliveryFee || 0);
+        if (fee > 0) {
+          deliveryFeeAmount.textContent = `₹${fee.toFixed(2)}`;
+          deliveryFeeAmount.style.color = 'var(--text-primary)';
+        } else {
+          deliveryFeeAmount.textContent = currentLang === 'bn' ? 'বিনামূল্যে (FREE)' : 'FREE';
+          deliveryFeeAmount.style.color = 'var(--green-success)';
+        }
+      } else {
+        deliveryFeeRow.style.display = 'none';
+      }
+    }
+  }
+
+  // Render Customer & Fulfillment
+  function renderCustomerFulfillment(order) {
+    const isBn = currentLang === 'bn';
+    const dict = i18n[currentLang];
+
+    const type = (order.fulfillmentType || 'PICKUP').toUpperCase();
+    const typeBadge = document.getElementById('fulfillmentTypeBadge');
+    typeBadge.textContent = type === 'DELIVERY' ? dict.delivery : dict.pickup;
+    typeBadge.style.background = type === 'DELIVERY' ? '#EDE9FE' : '#EFF6FF';
+    typeBadge.style.color = type === 'DELIVERY' ? '#6D28D9' : 'var(--accent)';
+
+    document.getElementById('custNameText').textContent = order.customerName || (isBn ? 'নাম দেওয়া হয়নি' : 'Guest Customer');
+    document.getElementById('custPhoneText').textContent = order.customerPhone || '--';
+
+    const slotRow = document.getElementById('deliverySlotRow');
+    const slotText = document.getElementById('deliverySlotText');
+    if (slotRow && slotText) {
+      if (type === 'DELIVERY' && order.deliverySlot) {
+        slotRow.style.display = 'flex';
+        slotText.textContent = order.deliverySlot;
+      } else {
+        slotRow.style.display = 'none';
+      }
+    }
+
+    const addrRow = document.getElementById('deliveryAddressRow');
+    const mapLinkRow = document.getElementById('deliveryMapLinkRow');
+    const mapLink = document.getElementById('deliveryMapLink');
+    if (type === 'DELIVERY' && order.deliveryAddress) {
+      addrRow.style.display = 'flex';
+      const a = order.deliveryAddress;
+      const parts = [a.streetAddress, a.landmark, a.pinCode ? `PIN: ${a.pinCode}` : ''].filter(Boolean);
+      document.getElementById('deliveryAddressText').textContent = parts.join(', ') || '--';
+
+      if (a.latitude && a.longitude) {
+        if (mapLinkRow && mapLink) {
+          mapLinkRow.style.display = 'flex';
+          mapLink.href = `https://www.google.com/maps/dir/?api=1&destination=${a.latitude},${a.longitude}`;
+        }
+      } else if (mapLinkRow) {
+        mapLinkRow.style.display = 'none';
+      }
+    } else {
+      addrRow.style.display = 'none';
+      if (mapLinkRow) mapLinkRow.style.display = 'none';
+    }
+
+    const notesRow = document.getElementById('customerNotesRow');
+    if (order.customerNotes && order.customerNotes.trim().length > 0) {
+      notesRow.style.display = 'flex';
+      document.getElementById('customerNotesText').textContent = order.customerNotes;
+    } else {
+      notesRow.style.display = 'none';
+    }
+  }
+
+  // Helpers
+  function formatTimestamp(ts) {
+    if (!ts) return '--:--';
+    try {
+      const d = new Date(ts);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return '--:--';
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function copyToClipboard(text, callback) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(callback).catch(() => fallbackCopy(text, callback));
+    } else {
+      fallbackCopy(text, callback);
+    }
+  }
+
+  function fallbackCopy(text, callback) {
+    const input = document.createElement('textarea');
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    try {
+      document.execCommand('copy');
+      if (callback) callback();
+    } catch (e) {
+      console.warn("Fallback copy failed", e);
+    }
+    document.body.removeChild(input);
+  }
+
+  // Start on window load
+  window.addEventListener('DOMContentLoaded', initTracker);
+</script>
+</body>
+</html>

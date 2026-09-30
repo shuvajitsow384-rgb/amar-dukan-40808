@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>UPI Bill Payment | Amar Dukan</title>
+<!-- Google Fonts: Noto Sans + Noto Sans Bengali -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Lightweight QR Code library for dynamic QR rendering -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --primary: #8B1E3F;          /* Deep Maroon / Red */
+    --primary-dark: #670E28;
+    --primary-light: #FCE7EC;
+    --secondary: #C9971C;        /* Warm Gold / Amber */
+    --secondary-light: #FEF3C7;
+    --success: #2E7D32;          /* Deep Green */
+    --success-light: #E8F5E9;
+    --alert: #D32F2F;            /* M3 Red-Orange Alert */
+    --alert-light: #FFEBEE;
+    --bg: #FAF9F7;               /* High-contrast warm neutral */
+    --paper: #FFFFFF;
+    --ink: #2B2A28;
+    --ink-muted: #6B6963;
+    --border: #E5E2DC;
+    --shadow: 0 10px 30px -5px rgba(139, 30, 63, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
+  }
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: var(--bg);
+    font-family: 'Noto Sans', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 14px 40px;
+  }
+  .payment-card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--paper);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  
+  /* Header */
+  .card-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: #FFFFFF;
+    padding: 22px 20px 20px;
+    text-align: center;
+    position: relative;
+    border-bottom: 3px solid var(--secondary);
+  }
+  .store-title {
+    font-size: 21px;
+    font-weight: 800;
+    margin: 0 0 4px 0;
+    letter-spacing: 0.01em;
+    line-height: 1.3;
+  }
+  .store-sub {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .badge-verified {
+    background: rgba(201, 151, 28, 0.35);
+    color: #FFF9E6;
+    border: 1px solid rgba(201, 151, 28, 0.6);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .card-body {
+    padding: 18px 18px 22px;
+  }
+
+  /* Amount Box */
+  .amount-box {
+    background: #FFFDF9;
+    border: 1.5px solid #F0E6D2;
+    border-radius: 14px;
+    padding: 14px 16px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .amount-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    margin: 0 0 4px;
+  }
+  .amount-val {
+    font-size: 34px;
+    font-weight: 800;
+    color: var(--primary);
+    margin: 0;
+    font-family: 'Noto Sans', -apple-system, sans-serif;
+    letter-spacing: -0.02em;
+  }
+  .note-badge {
+    display: inline-block;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 8px;
+    margin-top: 8px;
+    border: 1px solid rgba(139, 30, 63, 0.15);
+  }
+
+  /* Dynamic QR Code Section (Primary Hero) */
+  .qr-container {
+    background: #FFFFFF;
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 14px 16px;
+    text-align: center;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  .section-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .qr-box {
+    display: inline-block;
+    background: #FFFFFF;
+    padding: 12px;
+    border-radius: 12px;
+    border: 2px solid #E5E2DC;
+    margin: 4px auto 12px;
+  }
+  .qr-box img, .qr-box canvas {
+    display: block;
+    margin: 0 auto;
+  }
+  .qr-tip {
+    font-size: 12px;
+    color: var(--ink-muted);
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+  }
+
+  /* Secondary Actions Hierarchy */
+  .actions-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .download-qr-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    width: 100%;
+    padding: 10px 16px;
+    background: #FFFFFF;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(139, 30, 63, 0.08);
+  }
+  .download-qr-btn:hover, .download-qr-btn:active {
+    background: var(--primary-light);
+    transform: translateY(-1px);
+  }
+  .download-qr-btn .btn-sub-bn {
+    font-size: 12px;
+    font-weight: 500;
+    opacity: 0.85;
+  }
+
+  /* Manual UPI Copy Row */
+  .upi-box {
+    background: #FAF9F7;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .upi-text {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--ink);
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .copy-btn {
+    min-height: 40px;
+    border: 1.5px solid var(--secondary);
+    background: #FFFDF5;
+    color: #8C660D;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .copy-btn:hover, .copy-btn:active {
+    background: var(--secondary-light);
+  }
+  .copy-btn.copied {
+    background: var(--success);
+    color: #FFFFFF;
+    border-color: var(--success);
+  }
+  .upi-fallback-note {
+    font-size: 12px;
+    color: var(--ink-muted);
+    line-height: 1.5;
+    margin: 4px 2px 14px;
+  }
+
+  /* Help & Diagnostic Box */
+  .help-box {
+    background: #FFFDF5;
+    border: 1px solid #FDE68A;
+    border-left: 4px solid var(--secondary);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    color: #78350F;
+    line-height: 1.55;
+    margin-top: 14px;
+  }
+  .help-title {
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    color: #92400E;
+    font-size: 13px;
+  }
+
+  .footer-meta {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--ink-muted);
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="payment-card" id="mainCard">
+  <!-- Dynamic content will be injected -->
+</div>
+
+<script>
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const pa = (params.get('pa') || params.get('vpa') || '').trim();
+  const pn = (params.get('pn') || '').trim();
+  const am = (params.get('am') || '').trim();
+  const cu = (params.get('cu') || 'INR').trim();
+  const tn = (params.get('tn') || 'Due Payment').trim();
+  const store = (params.get('store') || pn || 'Amar Dukan').trim();
+
+  const mainCard = document.getElementById('mainCard');
+
+  function fmtAmount(v){
+    const n = parseFloat(v);
+    if (isNaN(n)) return null;
+    return n.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  }
+
+  const amountFmt = am ? fmtAmount(am) : null;
+  if (!pa || !amountFmt) {
+    mainCard.innerHTML = `
+      <div style="padding: 36px 20px; text-align: center;">
+        <h2 style="color: var(--alert); margin: 0 0 10px; font-size: 20px;">Invalid Payment Link</h2>
+        <p style="font-size: 13.5px; color: var(--ink-muted); line-height: 1.5;">
+          This payment link is missing the merchant UPI ID or bill amount. Please ask the shopkeeper to resend the bill.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  const noteReadable = decodeURIComponent(tn.replace(/\+/g, ' '));
+  const encodedPn = encodeURIComponent(pn || store);
+  const encodedTn = encodeURIComponent(noteReadable);
+  const isMerchant = pa.toLowerCase().includes('biz') || pa.toLowerCase().includes('okbiz') || pa.toLowerCase().includes('fbpe');
+
+  // Standard NPCI Compliant Dynamic UPI URI (Used STRICTLY for Dynamic QR Code)
+  const merchantParams = isMerchant ? '&mc=5411&mode=02&purpose=00' : '';
+  const upiUri = `upi://pay?pa=${encodeURIComponent(pa)}&pn=${encodedPn}&am=${am}&cu=INR&tn=${encodedTn}${merchantParams}`;
+
+  mainCard.innerHTML = `
+    <div class="card-header">
+      <h1 class="store-title">${escapeHtml(store)}</h1>
+      <p class="store-sub">
+        <span class="badge-verified">✓ Verified Merchant</span>
+        <span>${escapeHtml(pn || store)}</span>
+      </p>
+    </div>
+
+    <div class="card-body">
+      <div class="amount-box">
+        <div class="amount-label">Total Amount to Pay / মোট প্রদেয়</div>
+        <div class="amount-val">₹${amountFmt}</div>
+        <div class="note-badge">📝 ${escapeHtml(noteReadable)}</div>
+      </div>
+
+      <!-- Dynamic QR Code (Primary Hero Method) -->
+      <div class="qr-container">
+        <div class="section-label">
+          <span>📷 Scan QR Code to Pay</span>
+          <span style="font-size:12px; color:var(--ink-muted); font-weight:500;">(কিউআর স্ক্যান করে পে করুন)</span>
+        </div>
+        <div class="qr-box" id="qrcode"></div>
+        <p class="qr-tip">
+          Scan using Google Pay, PhonePe, Paytm, BHIM, or any banking app<br>
+          <span style="font-size:11px; opacity:0.9;">যেকোনো UPI স্ক্যানার অ্যাপ দিয়ে স্ক্যান করুন</span>
+        </p>
+
+        <!-- Secondary: Download QR -->
+        <button type="button" class="download-qr-btn" id="downloadQrBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Download QR Code</span>
+          <span class="btn-sub-bn">(কিউআর ডাউনলোড)</span>
+        </button>
+      </div>
+
+      <!-- Tertiary: Copy Merchant UPI ID -->
+      <div class="section-label" style="justify-content: flex-start; margin-top: 14px;">
+        💳 Can't scan? Pay to Merchant UPI ID
+      </div>
+      <div class="upi-box">
+        <span class="upi-text" id="upiIdText">${escapeHtml(pa)}</span>
+        <button class="copy-btn" id="copyBtn" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>Copy ID</span>
+        </button>
+      </div>
+      <div class="upi-fallback-note">
+        Paste this UPI ID into your UPI app's <strong>"Pay to UPI ID"</strong> option and enter <strong>₹${amountFmt}</strong> manually.<br>
+        <span style="font-size:11.5px; opacity:0.9;">আপনার UPI অ্যাপে <strong>"Pay to UPI ID"</strong> দিয়ে এই আইডি পেস্ট করুন এবং <strong>₹${amountFmt}</strong> লিখে পে করুন।</span>
+      </div>
+
+      <!-- Diagnostic & Help Box (Bilingual) -->
+      <div class="help-box">
+        <div class="help-title">💡 পেমেন্ট সহায়িকা ও সতর্কতা (Payment Notice)</div>
+        <div>
+          • <strong>ব্যাংক নিজস্ব পেমেন্ট ব্লক (Self-Payment Rule):</strong> আপনি যদি নিজের অ্যাকাউন্ট থেকে নিজের Google Pay Business UPI ID-তে পেমেন্ট টেস্ট করেন, তবে NPCI ও ব্যাংকের নিরাপত্তা নিয়মানুযায়ী লেনদেন বাতিল হতে পারে। অন্য যেকোনো ব্যাংক অ্যাকাউন্ট থেকে পেমেন্ট স্বাভাবিকভাবে সম্পন্ন হবে।<br>
+          • <strong>ম্যানুয়াল পেমেন্ট (বিকল্প):</strong> ক্যামেরা বা স্ক্যান করতে সমস্যা হলে উপরের Merchant UPI ID কপি করে আপনার UPI অ্যাপের "Pay to UPI ID" অপশনে পেস্ট করে ₹${amountFmt} লিখে পেমেন্ট করুন।
+        </div>
+      </div>
+
+      <div class="footer-meta">
+        Secured by Unified Payments Interface (NPCI) • Instant Confirmation
+      </div>
+    </div>
+  `;
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  // Render Dynamic QR Code (Bigger 200px)
+  try {
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(document.getElementById("qrcode"), {
+        text: upiUri,
+        width: 200,
+        height: 200,
+        colorDark: "#2B2A28",
+        colorLight: "#FFFFFF",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+  } catch(e) {
+    console.warn("QR code render deferred", e);
+  }
+
+  // Copy UPI ID button
+  const copyBtn = document.getElementById('copyBtn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', function(){
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pa).then(showCopied).catch(fallbackCopy);
+      } else {
+        fallbackCopy();
+      }
+      function showCopied(){
+        copyBtn.innerHTML = '<span>✓ Copied</span>';
+        copyBtn.classList.add('copied');
+        setTimeout(function(){
+          copyBtn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Copy ID</span>
+          `;
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      }
+      function fallbackCopy(){
+        const el = document.getElementById('upiIdText');
+        const range = document.createRange();
+        range.selectNode(el);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        try { document.execCommand('copy'); showCopied(); } catch(e) {}
+        window.getSelection().removeAllRanges();
+      }
+    });
+  }
+
+  // Download QR Code button (preserving exact 40px padded canvas export logic)
+  const downloadQrBtn = document.getElementById('downloadQrBtn');
+  if (downloadQrBtn) {
+    downloadQrBtn.addEventListener('click', function(){
+      const qrContainer = document.getElementById('qrcode');
+      if (!qrContainer) return;
+
+      const canvas = qrContainer.querySelector('canvas');
+      const img = qrContainer.querySelector('img');
+
+      function isVisible(el) {
+        if (!el) return false;
+        try {
+          return window.getComputedStyle(el).display !== 'none';
+        } catch (e) {
+          return false;
+        }
+      }
+
+      function getCanvasDataUrl(cvs) {
+        if (cvs && typeof cvs.toDataURL === 'function') {
+          try {
+            const u = cvs.toDataURL('image/png');
+            if (u && u !== 'data:,') return u;
+          } catch (e) {
+            console.warn('Canvas toDataURL failed', e);
+          }
+        }
+        return null;
+      }
+
+      function getImgDataUrl(im) {
+        if (im && im.src && im.src.startsWith('data:image/')) {
+          return im.src;
+        }
+        return null;
+      }
+
+      let dataUrl = null;
+      const canvasVisible = isVisible(canvas);
+      const imgVisible = isVisible(img);
+
+      if (imgVisible && !canvasVisible) {
+        dataUrl = getImgDataUrl(img) || getCanvasDataUrl(canvas);
+      } else if (canvasVisible && !imgVisible) {
+        dataUrl = getCanvasDataUrl(canvas) || getImgDataUrl(img);
+      } else {
+        dataUrl = getCanvasDataUrl(canvas) || getImgDataUrl(img);
+      }
+
+      if (!dataUrl) {
+        alert('QR code is not ready yet, please wait a moment.');
+        return;
+      }
+
+      const qrImage = new Image();
+      qrImage.onload = function(){
+        try {
+          const qrWidth = qrImage.naturalWidth || qrImage.width || 200;
+          const qrHeight = qrImage.naturalHeight || qrImage.height || 200;
+          const padding = 40;
+
+          const paddedCanvas = document.createElement('canvas');
+          paddedCanvas.width = qrWidth + (padding * 2);
+          paddedCanvas.height = qrHeight + (padding * 2);
+
+          const ctx = paddedCanvas.getContext('2d');
+          if (!ctx) {
+            alert('Could not prepare the QR image for download. Please try again.');
+            return;
+          }
+
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, paddedCanvas.width, paddedCanvas.height);
+          ctx.drawImage(qrImage, padding, padding, qrWidth, qrHeight);
+
+          const finalDataUrl = paddedCanvas.toDataURL('image/png');
+          if (!finalDataUrl || finalDataUrl === 'data:,') {
+            alert('Could not prepare the QR image for download. Please try again.');
+            return;
+          }
+
+          const cleanStore = (store || pn || 'payment').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+          const cleanAmt = am ? am.replace(/[^0-9.]/g, '') : 'due';
+          const filename = `upi-qr-${cleanStore || 'store'}-${cleanAmt}.png`;
+
+          const a = document.createElement('a');
+          a.href = finalDataUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+
+          const originalHtml = downloadQrBtn.innerHTML;
+          downloadQrBtn.innerHTML = `<span>✓ Saved to Device</span>`;
+          downloadQrBtn.style.borderColor = 'var(--success)';
+          downloadQrBtn.style.color = 'var(--success)';
+          setTimeout(function(){
+            downloadQrBtn.innerHTML = originalHtml;
+            downloadQrBtn.style.borderColor = '';
+            downloadQrBtn.style.color = '';
+          }, 2000);
+        } catch (err) {
+          console.error('Error generating padded QR download:', err);
+          alert('Could not prepare the QR image for download. Please try again.');
+        }
+      };
+
+      qrImage.onerror = function(){
+        alert('Could not prepare the QR image for download. Please try again.');
+      };
+
+      qrImage.src = dataUrl;
+    });
+  }
+
+})();
+</script>
+</body>
+</html>

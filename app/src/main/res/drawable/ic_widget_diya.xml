@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Diya Warm Outer Glow Aura -->
+    <path
+        android:fillAlpha="0.25"
+        android:fillColor="#FFD54F"
+        android:pathData="M12,1.5 C8.5,1.5 7,4.8 7,7.5 C7,10.2 9.2,12 12,12 C14.8,12 17,10.2 17,7.5 C17,4.8 15.5,1.5 12,1.5 Z" />
+
+    <!-- Flame Outer Petal (Warm Amber / Saffron) -->
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M12,2.5 C10.3,4.2 9.2,6 9.2,7.8 C9.2,9.5 10.4,10.8 12,10.8 C13.6,10.8 14.8,9.5 14.8,7.8 C14.8,6 13.7,4.2 12,2.5 Z" />
+
+    <!-- Flame Core (Bright Vibrant Gold) -->
+    <path
+        android:fillColor="#FFF176"
+        android:pathData="M12,4.5 C10.8,5.8 10.3,7 10.3,8 C10.3,9 11,9.8 12,9.8 C13,9.8 13.7,9 13.7,8 C13.7,7 13.2,5.8 12,4.5 Z" />
+
+    <!-- Flame White Center Spark -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,6 C11.5,6.8 11.2,7.5 11.2,8 C11.2,8.5 11.5,8.8 12,8.8 C12.5,8.8 12.8,8.5 12.8,8 C12.8,7.5 12.5,6.8 12,6 Z" />
+
+    <!-- Diya Clay/Brass Lamp Bowl Body -->
+    <path
+        android:fillColor="#F2C94C"
+        android:pathData="M3.2,13.5 C3.2,13.5 5,19 12,19 C19,19 20.8,13.5 20.8,13.5 C20.8,13.5 17.5,15.6 12,15.6 C6.5,15.6 3.2,13.5 3.2,13.5 Z" />
+
+    <!-- Diya Lamp Upper Rim (Deep Polished Gold) -->
+    <path
+        android:fillColor="#D4A017"
+        android:pathData="M2.8,13 C3.5,12 6.5,13.4 12,13.4 C17.5,13.4 20.5,12 21.2,13 C20.5,14.2 17.5,15.4 12,15.4 C6.5,15.4 3.5,14.2 2.8,13 Z" />
+
+    <!-- Diya Base Stand Pedestal -->
+    <path
+        android:fillColor="#B78103"
+        android:pathData="M8,18.8 L16,18.8 C16,18.8 15.3,21 13.8,21.5 L10.2,21.5 C8.7,21 8,18.8 8,18.8 Z" />
+</vector>

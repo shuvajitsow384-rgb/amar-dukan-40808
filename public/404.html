@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Amar Dukan | Digital Khata</title>
+<!-- Google Fonts: Noto Sans + Noto Sans Bengali -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=Noto+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #8B1E3F;
+    --primary-dark: #670E28;
+    --secondary: #C9971C;
+    --bg: #FAF9F7;
+    --card-bg: #FFFFFF;
+    --text: #2B2A28;
+    --muted: #6B6963;
+    --border: #E5E2DC;
+    --shadow: 0 10px 30px -5px rgba(139, 30, 63, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans', 'Noto Sans Bengali', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px 16px;
+    text-align: center;
+  }
+  .card {
+    background: var(--card-bg);
+    padding: 36px 24px;
+    border-radius: 20px;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .icon-wrapper {
+    width: 64px;
+    height: 64px;
+    background: #FCE7EC;
+    color: var(--primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 28px;
+    border: 2px solid rgba(139, 30, 63, 0.2);
+  }
+  h1 { font-size: 21px; font-weight: 800; margin-bottom: 8px; color: var(--text); }
+  p { font-size: 13.5px; color: var(--muted); line-height: 1.55; margin-bottom: 24px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--primary);
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 13px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(139, 30, 63, 0.25);
+    min-height: 48px;
+  }
+  .btn:active { transform: scale(0.98); opacity: 0.9; }
+</style>
+</head>
+<body>
+<div class="card" id="redirectCard">
+  <div class="icon-wrapper">🔄</div>
+  <h1>Locating Khata Statement...</h1>
+  <p>Connecting you to the digital khata ledger portal...</p>
+</div>
+
+<script>
+(function() {
+  const path = window.location.pathname.toLowerCase();
+  const search = window.location.search;
+  const urlParams = new URLSearchParams(search);
+  const token = (urlParams.get('token') || urlParams.get('khataToken') || '').trim();
+  const pa = (urlParams.get('pa') || urlParams.get('vpa') || '').trim();
+
+  // 1. Auto-redirect if token is in query
+  if (token) {
+    window.location.replace('/khata/?token=' + encodeURIComponent(token));
+    return;
+  }
+
+  // 2. Auto-redirect if pay query exists
+  if (pa) {
+    window.location.replace('/pay/' + search);
+    return;
+  }
+
+  // 3. Path matching
+  if (path.includes('khata')) {
+    window.location.replace('/khata/' + search);
+    return;
+  }
+  if (path.includes('pay')) {
+    window.location.replace('/pay/' + search);
+    return;
+  }
+
+  // If no match found, show user friendly home button
+  const card = document.getElementById('redirectCard');
+  card.innerHTML = `
+    <div class="icon-wrapper">🏪</div>
+    <h1>Amar Dukan • Digital Khata</h1>
+    <p>Please check your link or open the Digital Khata portal to view your statement.</p>
+    <a href="/khata/" class="btn">Go to Khata Portal</a>
+  `;
+})();
+</script>
+</body>
+</html>

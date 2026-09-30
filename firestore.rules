@@ -1,0 +1,283 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================
+    // 0. Helper Functions for RBAC & Staff Access
+    // =========================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isPermanentAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email != null &&
+        request.auth.token.email.lower() == 'shuvajitsow384@gmail.com';
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        isPermanentAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         getUserData().role == 'ADMIN')
+      );
+    }
+
+    function isManager() {
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         getUserData().role == 'STORE_MANAGER')
+      );
+    }
+
+    function isApprovedStaff() {
+      return isSignedIn() && (
+        isPermanentAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         getUserData().role in ['ADMIN', 'STORE_MANAGER', 'EMPLOYEE'] &&
+         (!('status' in getUserData()) || getUserData().status != 'PENDING') &&
+         getUserData().role != 'UNASSIGNED' &&
+         getUserData().role != 'UNRECOGNIZED' &&
+         getUserData().role != 'PENDING')
+      );
+    }
+
+    function canViewReports() {
+      return isAdmin() || (
+        isApprovedStaff() &&
+        getUserData().canViewReports == true
+      );
+    }
+
+    function canManageInventory() {
+      return isManager() || (
+        isApprovedStaff() &&
+        getUserData().canManageInventory == true
+      );
+    }
+
+    function canAccessSettings() {
+      return isAdmin() || (
+        isApprovedStaff() &&
+        getUserData().canAccessSettings == true
+      );
+    }
+
+    // =========================================================
+    // 1. User Profiles & RBAC Roles
+    // =========================================================
+    match /users/{userId} {
+      allow read: if isApprovedStaff() || (isSignedIn() && request.auth.uid == userId);
+      allow create: if isAdmin() || (
+        isSignedIn() && request.auth.uid == userId &&
+        request.resource.data.role == 'UNASSIGNED' &&
+        request.resource.data.status == 'PENDING'
+      );
+      allow update, delete: if isAdmin() || (isSignedIn() && request.auth.uid == userId && isPermanentAdmin());
+    }
+
+    match /preassigned_roles/{email} {
+      allow read: if isApprovedStaff();
+      allow write: if isAdmin() || canAccessSettings();
+    }
+
+    match /roles_config/{configId} {
+      allow read: if isApprovedStaff();
+      allow write: if isAdmin() || canAccessSettings();
+    }
+
+    // =========================================================
+    // 2. Online Store & Products Catalog
+    // =========================================================
+    // Products & Store Settings: Public get/list, staff-only write
+    match /products/{productId} {
+      allow get, list: if true;
+      allow write: if isApprovedStaff();
+    }
+
+    match /product_batches/{batchId} {
+      allow read, write: if isApprovedStaff();
+    }
+
+    match /store_settings/{settingId} {
+      allow get, list: if true;
+      allow write: if isApprovedStaff();
+    }
+
+    // =========================================================
+    // 3. Online Orders & Customer Accounts
+    // =========================================================
+    // - Strict creation validation (status, paymentStatus, totalAmount, items, customerPhone >= 10, orderId >= 20)
+    // - Public get by exact orderId; staff-only list/delete
+    // - Update allowed for staff OR guest writing only paymentReference and paymentSubmittedAt
+    match /orders/{orderId} {
+      allow create: if request.resource.data.status == 'PLACED' &&
+        request.resource.data.paymentStatus in ['PENDING', 'COD'] &&
+        request.resource.data.totalAmount > 0 &&
+        request.resource.data.items.size() > 0 &&
+        request.resource.data.customerPhone is string &&
+        request.resource.data.customerPhone.size() >= 10 &&
+        orderId.size() >= 20 &&
+        (!('customerUid' in request.resource.data) ||
+         request.resource.data.customerUid == null ||
+         (isSignedIn() && request.resource.data.customerUid == request.auth.uid));
+      allow get: if true;
+      allow list: if isApprovedStaff();
+      allow update: if isApprovedStaff() ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentReference', 'paymentSubmittedAt', 'paymentScreenshotData']));
+      allow delete: if isApprovedStaff();
+    }
+
+    match /customer_accounts/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == uid
+                    && request.resource.data.uid == uid
+                    && request.resource.data.linkStatus in ['NONE', 'PENDING']
+                    && request.resource.data.linkedCustomerId == null
+                    && request.resource.data.completedOrderCount == 0;
+      allow update: if isAdmin() || (
+        isSignedIn() && request.auth.uid == uid &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['linkedCustomerId', 'completedOrderCount']) &&
+        (request.resource.data.linkStatus == resource.data.linkStatus ||
+         (resource.data.linkStatus in ['NONE', 'REJECTED', 'APPROVED'] && request.resource.data.linkStatus == 'PENDING'))
+      );
+      allow delete: if false;
+
+      match /order_refs/{orderId} {
+        allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+        allow create: if isSignedIn() && request.auth.uid == uid;
+        allow update: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+        allow delete: if false;
+      }
+    }
+
+    match /pending_links/{requestId} {
+      allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.status == 'PENDING'
+                    && request.resource.data.customerId is string
+                    && request.resource.data.claimedPhone is string
+                    && exists(/databases/$(database)/documents/customers/$(request.resource.data.customerId))
+                    && get(/databases/$(database)/documents/customers/$(request.resource.data.customerId)).data.phone == request.resource.data.claimedPhone;
+      allow update: if isAdmin()
+                    && resource.data.status == 'PENDING'
+                    && request.resource.data.status in ['APPROVED', 'REJECTED'];
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================
+    // 4. Customers & Khata (Share Links, Public Ledger, Payment Claims)
+    // =========================================================
+    // Public get only (no list) for secure shareLinks
+    match /shareLinks/{token} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if isApprovedStaff();
+    }
+
+    // Customers: Public get only (no list) for share link verification, staff-only write, but allow logged-in customers to search by phone to link
+    match /customers/{customerId} {
+      allow get: if true;
+      allow list: if isApprovedStaff() || isSignedIn();
+      allow write: if isApprovedStaff();
+
+      // Public read-only for verified customer ledger viewing
+      match /public_ledger/{entryId} {
+        allow read: if true;
+        allow write: if isApprovedStaff();
+      }
+
+      // Public create & read for customer payment claim submissions, staff update/delete
+      match /payment_claims/{claimId} {
+        allow read: if true;
+        allow create: if true;
+        allow update, delete: if isApprovedStaff();
+      }
+    }
+
+    // Collection group access for shopkeeper/staff to read all customer claims
+    match /{path=**}/payment_claims/{claimId} {
+      allow read: if isApprovedStaff();
+    }
+
+    // =========================================================
+    // 5. Staff-Only Business Operations
+    // =========================================================
+    // Employees & Salaries
+    match /employees/{employeeId} {
+      allow read: if isApprovedStaff();
+      allow write: if isAdmin();
+    }
+
+    match /employee_salary_dues/{dueId} {
+      allow read: if isApprovedStaff();
+      allow write: if isAdmin();
+    }
+
+    match /employee_salary_payments/{paymentId} {
+      allow read: if isApprovedStaff();
+      allow write: if isAdmin();
+    }
+
+    match /employee_advances/{advanceId} {
+      allow read: if isApprovedStaff();
+      allow write: if isAdmin();
+    }
+
+    match /employee_attendance/{attendanceId} {
+      allow read, write: if isApprovedStaff();
+    }
+
+    // Sales & Ledger
+    match /sales/{saleId} {
+      allow read, write: if isApprovedStaff();
+    }
+
+    match /sales_returns/{returnId} {
+      allow read, write: if isApprovedStaff();
+    }
+
+    match /ledger_entries/{entryId} {
+      allow read, write: if isApprovedStaff();
+    }
+
+    // Expenses
+    match /expenses/{expenseId} {
+      allow read, write: if isApprovedStaff();
+    }
+
+    // Suppliers & Purchases
+    match /suppliers/{supplierId} {
+      allow read, write: if isApprovedStaff();
+    }
+
+    match /purchases/{purchaseId} {
+      allow read, write: if isApprovedStaff();
+    }
+
+    // Financial Reports
+    match /financial_reports/{reportId} {
+      allow read, write: if canViewReports();
+    }
+
+    // System Migrations & Backups
+    match /migration_status/{docId} {
+      allow read, write: if isApprovedStaff();
+    }
+
+    match /cloud_backup_snapshots/{docId} {
+      allow read, write: if isApprovedStaff();
+    }
+
+    // Default Fallback: Staff-only access for any other collections
+    match /{document=**} {
+      allow read, write: if isApprovedStaff();
+    }
+  }
+}

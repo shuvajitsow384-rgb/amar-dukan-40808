@@ -1,0 +1,59 @@
+{
+  "hosting": {
+    "public": "public",
+    "cleanUrls": true,
+    "trailingSlash": true,
+    "rewrites": [
+      {
+        "source": "/khata/**",
+        "destination": "/khata/index.html"
+      },
+      {
+        "source": "/pay/**",
+        "destination": "/pay/index.html"
+      },
+      {
+        "source": "/shop/track",
+        "destination": "/shop/track.html"
+      },
+      {
+        "source": "/shop/track/**",
+        "destination": "/shop/track.html"
+      },
+      {
+        "source": "/shop/**",
+        "destination": "/shop/index.html"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          },
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          }
+        ]
+      }
+    ],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}

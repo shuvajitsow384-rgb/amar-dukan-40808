@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Digital Khata & Store Portal</title>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<style>
+  :root {
+    --primary: #1E3A8A;
+    --primary-dark: #1E293B;
+    --primary-light: #EFF6FF;
+    --accent: #2563EB;
+    --green-profit: #15803D;
+    --green-bg: #DCFCE7;
+    --gold: #D97706;
+    --gold-bg: #FEF3C7;
+    --card-bg: #FFFFFF;
+    --bg-main: #F8FAFC;
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --border-color: #E2E8F0;
+    --radius-lg: 16px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    line-height: 1.5;
+    padding-bottom: 40px;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  .hero-card {
+    background: linear-gradient(135deg, #1E3A8A 0%, #1D4ED8 100%);
+    color: white;
+    padding: 28px 20px 24px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 18px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-card::after {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .store-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  .store-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+
+  .store-subtitle {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 16px;
+  }
+
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-md);
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border-color);
+    font-size: 14px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-input:focus {
+    border-color: var(--accent);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px 18px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s ease, background-color 0.2s ease;
+  }
+
+  .btn:active {
+    transform: scale(0.98);
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.25);
+  }
+
+  .btn-green {
+    background: linear-gradient(135deg, #15803D 0%, #16A34A 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .feature-item {
+    background: var(--bg-main);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    font-size: 12px;
+  }
+
+  .feature-icon {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+
+  .feature-title {
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+  }
+
+  .feature-desc {
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  .footer-text {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Hero Section -->
+  <header class="hero-card">
+    <div class="store-icon">🏪</div>
+    <h1 class="store-title" id="portalStoreName">Kali Mata Variety Store</h1>
+    <p class="store-subtitle" id="portalStoreAddress">Online Customer Khata & Payment Portal</p>
+    <div class="live-badge">
+      <span>●</span> <span>Secure Cloud Ledger</span>
+    </div>
+  </header>
+
+  <!-- View Digital Khata Card -->
+  <div class="card">
+    <h2 class="card-title"><span>📋</span> <span>View Digital Khata Statement</span></h2>
+    <p class="card-desc">Enter your customer link, share token, or request link from shopkeeper.</p>
+    
+    <form id="tokenForm">
+      <div class="form-group">
+        <input 
+          type="text" 
+          id="tokenInput" 
+          class="form-input" 
+          placeholder="Paste Khata link or Token (e.g. kh_xyz123...)" 
+          required 
+        />
+      </div>
+      <button type="submit" class="btn btn-primary">
+        <span>🔍</span> <span>Open My Khata Statement</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Direct UPI Payment Option -->
+  <div class="card">
+    <h2 class="card-title"><span>⚡</span> <span>Direct Store UPI Payment</span></h2>
+    <p class="card-desc">Pay directly to store via Google Pay, PhonePe, Paytm, or BHIM.</p>
+    <a href="/pay/?pa=9609319228-1@okbizaxis&pn=SHUVAJITSOW&store=Kali%20Mata%20Variety%20Store" class="btn btn-green" id="payDirectLink">
+      <span>💸</span> <span>Make Instant Payment</span>
+    </a>
+  </div>
+
+  <!-- Features Grid -->
+  <div class="card">
+    <h2 class="card-title"><span>✨</span> <span>Customer Khata Benefits</span></h2>
+    <div class="features-grid">
+      <div class="feature-item">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Live Balance</div>
+        <div class="feature-desc">Real-time ledger updates after every transaction.</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-title">Self-Report UPI</div>
+        <div class="feature-desc">Submit online payment proofs directly to the shop.</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📜</div>
+        <div class="feature-title">Itemized History</div>
+        <div class="feature-desc">Complete purchase records with bills and receipts.</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📱</div>
+        <div class="feature-title">100% Mobile Ready</div>
+        <div class="feature-desc">No login or password needed for customer link.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-text">
+    🔒 Powered by Digital Khata • Real-time Cloud Sync
+  </div>
+</div>
+
+<script>
+(function() {
+  // Check if token or pay parameters exist in current URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = (urlParams.get('token') || urlParams.get('khataToken') || '').trim();
+  const pa = (urlParams.get('pa') || urlParams.get('vpa') || '').trim();
+
+  if (token) {
+    // Seamlessly forward to khata statement view
+    window.location.replace('/khata/?token=' + encodeURIComponent(token));
+    return;
+  }
+
+  if (pa) {
+    // Seamlessly forward to pay view
+    window.location.replace('/pay/' + window.location.search);
+    return;
+  }
+
+  // Token form submit handler
+  const tokenForm = document.getElementById('tokenForm');
+  const tokenInput = document.getElementById('tokenInput');
+
+  tokenForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    let raw = tokenInput.value.trim();
+    if (!raw) return;
+
+    // Check if user pasted full URL
+    try {
+      if (raw.startsWith('http://') || raw.startsWith('https://')) {
+        const u = new URL(raw);
+        const t = u.searchParams.get('token');
+        if (t) {
+          window.location.href = '/khata/?token=' + encodeURIComponent(t);
+          return;
+        }
+      }
+    } catch(err) {}
+
+    window.location.href = '/khata/?token=' + encodeURIComponent(raw);
+  });
+})();
+</script>
+</body>
+</html>
