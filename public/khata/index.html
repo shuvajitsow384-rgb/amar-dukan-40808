@@ -2,50 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<div id="debug-overlay" style="position:fixed; bottom:0; left:0; right:0; max-height:160px; overflow-y:auto; background:rgba(0,0,0,0.9); color:#00ff00; font-family:monospace; font-size:11px; padding:10px; z-index:999999; border-top:2px solid #ef4444; pointer-events:auto; text-align:left;">
-  <div style="font-weight:bold; color:#ff4444; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
-    <span>[DEBUG CONSOLE]</span>
-    <button onclick="document.getElementById('debug-overlay').style.display='none'" style="background:#ff4444; color:white; border:none; padding:2px 8px; border-radius:4px; font-size:10px; cursor:pointer; font-weight:bold;">Hide Logs</button>
-  </div>
-  <div id="debug-log-lines">Console logs will appear here...</div>
-</div>
-<script>
-  (function() {
-    const container = document.getElementById('debug-log-lines');
-    function logToScreen(msg, isError = false) {
-      const line = document.createElement('div');
-      line.style.color = isError ? '#ff3333' : '#00ff00';
-      line.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
-      line.style.padding = '2px 0';
-      line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
-      container.appendChild(line);
-      const overlay = document.getElementById('debug-overlay');
-      overlay.scrollTop = overlay.scrollHeight;
-    }
-    window.onerror = function(message, source, lineno, colno, error) {
-      logToScreen('ERROR: ' + message + ' (' + source + ':' + lineno + ')', true);
-    };
-    window.onunhandledrejection = function(event) {
-      logToScreen('REJECTION: ' + (event.reason ? (event.reason.message || String(event.reason)) : 'unknown rejection'), true);
-    };
-    const origLog = console.log;
-    const origError = console.error;
-    const origWarn = console.warn;
-    console.log = function(...args) {
-      origLog.apply(console, args);
-      logToScreen(args.join(' '));
-    };
-    console.error = function(...args) {
-      origError.apply(console, args);
-      logToScreen('ERR: ' + args.join(' '), true);
-    };
-    console.warn = function(...args) {
-      origWarn.apply(console, args);
-      logToScreen('WARN: ' + args.join(' '), true);
-    };
-    console.log('Debug overlay initialized successfully!');
-  })();
-</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Customer Digital Khata | Amar Dukan</title>
 <!-- Google Fonts: Noto Sans + Noto Sans Bengali -->

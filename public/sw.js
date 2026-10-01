@@ -4,7 +4,7 @@
  * Strictly skips all payment, UPI, QR, Khata, and account endpoints.
  */
 
-const SHELL_CACHE_NAME = 'kmvs-shell-v3';
+const SHELL_CACHE_NAME = 'kmvs-shell-v4';
 const IMAGE_CACHE_NAME = 'kmvs-images-v1';
 const MAX_IMAGE_ENTRIES = 60;
 

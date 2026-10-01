@@ -2129,12 +2129,12 @@
       let screenshotBase64 = null;
       if (file) {
         if (skipCompression) {
-          // Fallback: Skip compression and submit original file directly if under 700KB
-          if (file.size > 700 * 1024) {
+          // Fallback: Skip compression and submit original file directly if under 900KB
+          if (file.size > 900 * 1024) {
             const sizeKb = Math.round(file.size / 1024);
             const sizeErr = new Error(isBn
-              ? `ছবির সাইজ অনেক বড় (${sizeKb}KB > ৭০০KB সীমা)। কমপ্রেশন ছাড়া জমা দেওয়া সম্ভব নয়।`
-              : `Original photo is too large (${sizeKb}KB > 700KB limit) to submit without compression.`);
+              ? `ছবির সাইজ অনেক বড় (${sizeKb}KB > ৯০০KB সীমা)। কমপ্রেশন ছাড়া জমা দেওয়া সম্ভব নয়।`
+              : `Original photo is too large (${sizeKb}KB > 900KB limit) to submit without compression.`);
             sizeErr.code = 'size-cap-exceeded';
             sizeErr.stage = 'Checking size limit';
             throw sizeErr;
@@ -2142,17 +2142,31 @@
           setProofSubmissionStage('Reading file');
           screenshotBase64 = await readFileAsDataUrl(file);
         } else {
-          screenshotBase64 = await compressScreenshotWithTimeout(file, 1200, 0.82);
+          try {
+            screenshotBase64 = await compressScreenshotWithTimeout(file, 1200, 0.82);
+          } catch (compressionErr) {
+            console.warn("Compression failed, attempting auto fallback to original photo:", compressionErr);
+            if (file.size <= 900 * 1024) {
+              try {
+                setProofSubmissionStage('Reading file');
+                screenshotBase64 = await readFileAsDataUrl(file);
+              } catch (readErr) {
+                throw compressionErr;
+              }
+            } else {
+              throw compressionErr;
+            }
+          }
         }
 
-        // Size limit check: ~700KB cap check against screenshotData (Firestore 1MB limit safe)
+        // Size limit check: ~900KB cap check against screenshotData (Firestore 1MB limit safe)
         setProofSubmissionStage('Checking size limit');
-        const MAX_ALLOWED_BASE64_BYTES = 700 * 1024;
+        const MAX_ALLOWED_BASE64_BYTES = 900 * 1024;
         if (screenshotBase64 && screenshotBase64.length > MAX_ALLOWED_BASE64_BYTES) {
           const sizeKb = Math.round(screenshotBase64.length / 1024);
           const sizeErr = new Error(isBn
-            ? `স্ক্রিনশটের সাইজ অনেক বড় (${sizeKb}KB > ৭০০KB limit)। অনুগ্রহ করে ছোট ছবি দিন অথবা ছবি ছাড়া UTR জমা দিন।`
-            : `Screenshot is too large (${sizeKb}KB > 700KB limit). Please choose a smaller photo or submit without one.`);
+            ? `স্ক্রিনশটের সাইজ অনেক বড় (${sizeKb}KB > ৯০০KB limit)। অনুগ্রহ করে ছোট ছবি দিন অথবা ছবি ছাড়া UTR জমা দিন।`
+            : `Screenshot is too large (${sizeKb}KB > 900KB limit). Please choose a smaller photo or submit without one.`);
           sizeErr.code = 'size-cap-exceeded';
           sizeErr.stage = 'Checking size limit';
           sizeErr.details = `Base64 length: ${screenshotBase64.length} bytes (~${sizeKb}KB). Max allowed: ${MAX_ALLOWED_BASE64_BYTES} bytes.`;
@@ -2175,6 +2189,7 @@
 
       // Reset local file selection on success
       clearSelectedScreenshot();
+      hideProofError();
       alert(isBn
         ? '✓ আপনার পেমেন্ট প্রমাণ সফলভাবে জমা হয়েছে! দোকানদার যাচাই করে অর্ডার প্রস্তুত করবেন।'
         : '✓ Payment proof submitted successfully! The store will verify and process your order.'
